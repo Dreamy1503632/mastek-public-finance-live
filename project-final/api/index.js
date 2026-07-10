@@ -19,15 +19,55 @@ app.use(express.json());
 
 // --- Azure OpenAI config: environment variables (set in Vercel dashboard),
 // never committed to the repo. ---
+// Accept a plain resource root ("https://xyz.openai.azure.com") for
+// AZURE_OPENAI_ENDPOINT, but also tolerate someone pasting the FULL
+// request URL Azure shows in its portal (which already includes
+// /openai/deployments/<name>/chat/completions?api-version=...) by
+// stripping everything after the host so we don't double up the path.
+function normalizeAzureEndpoint(raw) {
+  if (!raw) return raw;
+  try {
+    const u = new URL(raw);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return raw;
+  }
+}
+
+// If a full URL was pasted into AZURE_OPENAI_ENDPOINT, pull the
+// deployment name and api-version out of it too, so config still works
+// even if only the endpoint var was set.
+function extractFromFullUrl(raw) {
+  const result = { deployment: null, apiVersion: null };
+  if (!raw) return result;
+  try {
+    const u = new URL(raw);
+    const match = u.pathname.match(/\/deployments\/([^/]+)/);
+    if (match) result.deployment = decodeURIComponent(match[1]);
+    const v = u.searchParams.get('api-version');
+    if (v) result.apiVersion = v;
+  } catch {
+    // not a full URL, nothing to extract
+  }
+  return result;
+}
+
+const rawEndpoint = process.env.AZURE_OPENAI_ENDPOINT;
+const extracted = extractFromFullUrl(rawEndpoint);
+
 const azureConfig = {
-  endpoint: process.env.AZURE_OPENAI_ENDPOINT,
-  apiKey: process.env.AZURE_OPENAI_KEY,
-  deployment: process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o',
-  apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-08-01-preview',
+  endpoint: normalizeAzureEndpoint(rawEndpoint),
+  // Support either env var name - AZURE_OPENAI_KEY is the canonical one
+  // used elsewhere in this file, but AZURE_OPENAI_API_KEY (the name Azure
+  // itself shows in the portal) is accepted too so a copy-paste from
+  // Azure's own docs still works.
+  apiKey: process.env.AZURE_OPENAI_KEY || process.env.AZURE_OPENAI_API_KEY,
+  deployment: process.env.AZURE_OPENAI_DEPLOYMENT || extracted.deployment || 'gpt-4o',
+  apiVersion: process.env.AZURE_OPENAI_API_VERSION || extracted.apiVersion || '2024-08-01-preview',
 };
 
 if (!azureConfig.apiKey) {
-  console.warn('AZURE_OPENAI_KEY is not set - report generation will fail until it is configured.');
+  console.warn('AZURE_OPENAI_KEY (or AZURE_OPENAI_API_KEY) is not set - report generation will fail until it is configured.');
 }
 
 // --- SMTP/email config: also environment variables, same pattern as Azure.
@@ -275,36 +315,71 @@ app.post('/api/generate-report', reportLimiter, async (req, res) => {
     `${azureConfig.endpoint}/openai/deployments/${azureConfig.deployment}/chat/completions` +
     `?api-version=${azureConfig.apiVersion}`;
 
-  try {
-    const azureResponse = await fetch(url, {
+  const systemMessage = {
+    role: 'system',
+    content: 'You output ONLY valid JSON matching the schema the user asks for. No markdown fences, no preamble, no commentary.',
+  };
+  const userMessage = { role: 'user', content: userPrompt };
+  const tokenLimit = Math.min(max_tokens || 700, 1000);
+
+  // Newer reasoning-tier models (e.g. gpt-5.x deployments) use
+  // max_completion_tokens instead of max_tokens, and some reject a custom
+  // temperature or response_format. Try the "standard" chat-completions
+  // shape first; if Azure rejects it for an unsupported-parameter reason,
+  // retry once with the adjusted shape rather than failing outright.
+  async function callAzure(body) {
+    return fetch(url, {
       method: 'POST',
       headers: {
         'api-key': azureConfig.apiKey,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You output ONLY valid JSON matching the schema the user asks for. No markdown fences, no preamble, no commentary.',
-          },
-          { role: 'user', content: userPrompt },
-        ],
-        max_tokens: Math.min(max_tokens || 700, 1000),
-        temperature: 0.7,
-        response_format: { type: 'json_object' },
-      }),
+      body: JSON.stringify(body),
     });
+  }
+
+  const primaryBody = {
+    messages: [systemMessage, userMessage],
+    max_tokens: tokenLimit,
+    temperature: 0.7,
+    response_format: { type: 'json_object' },
+  };
+
+  try {
+    let azureResponse = await callAzure(primaryBody);
+    let errText = '';
 
     if (!azureResponse.ok) {
-      const errText = await azureResponse.text();
+      errText = await azureResponse.text();
+      const looksLikeUnsupportedParam =
+        azureResponse.status === 400 &&
+        /max_tokens|temperature|response_format|unsupported/i.test(errText);
+
+      if (looksLikeUnsupportedParam) {
+        console.warn('Azure rejected standard params, retrying with newer-model-compatible body:', errText);
+        const fallbackBody = {
+          messages: [systemMessage, userMessage],
+          max_completion_tokens: tokenLimit,
+        };
+        azureResponse = await callAzure(fallbackBody);
+        if (!azureResponse.ok) {
+          errText = await azureResponse.text();
+        }
+      }
+    }
+
+    if (!azureResponse.ok) {
       console.error('Azure OpenAI error:', azureResponse.status, errText);
-      return res.status(502).json({ error: 'Azure OpenAI request failed.' });
+      return res.status(502).json({ error: 'Azure OpenAI request failed.', detail: errText });
     }
 
     const data = await azureResponse.json();
     const text = data.choices?.[0]?.message?.content || '';
+
+    if (!text) {
+      console.error('Azure OpenAI returned no content:', JSON.stringify(data));
+      return res.status(502).json({ error: 'Azure OpenAI returned an empty response.' });
+    }
 
     res.json({ content: [{ type: 'text', text }] });
   } catch (error) {
