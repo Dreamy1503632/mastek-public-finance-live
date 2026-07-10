@@ -1,0 +1,14 @@
+# Local secrets - never commit these
+.env
+azure.json
+email.json
+api.json
+
+# Local data exports (real data lives in Vercel Blob in production)
+*.xlsx
+
+# Dependencies
+node_modules/
+
+# Legacy/local-only server, not used on Vercel
+server.js

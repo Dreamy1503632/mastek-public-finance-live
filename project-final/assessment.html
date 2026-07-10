@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Council AI Finance Pulse 2026 · Mastek</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --navy:#0B1F3A; --navy-mid:#132840; --navy-light:#1C3A5C;
+    --gold:#C9A84C; --gold-light:#E8C96A;
+    --teal:#00B4B4; --teal-light:#00D4D4;
+    --purple:#7C3AED; --purple-light:#A78BFA;
+    --coral:#E8524A; --coral-light:#F87171;
+    --green:#2ECC71;
+    --white:#FFFFFF; --off-white:#F0F4F8; --grey:#8A9BB0;
+  }
+  body { font-family:'Inter',sans-serif; background:var(--navy); color:var(--white); min-height:100vh; overflow-x:hidden; }
+
+  /* ── SCREENS ── */
+  .screen { display:none; min-height:100vh; flex-direction:column; }
+  .screen.active { display:flex; }
+
+  /* ── TOP BAR ── */
+  .top-bar {
+    background:rgba(11,31,58,0.98); backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(201,168,76,0.18);
+    position:sticky; top:0; z-index:100;
+  }
+  .tb-row1 { display:flex; align-items:center; justify-content:space-between; padding:13px 40px; }
+  .tb-row2 { padding:6px 40px 10px; font-size:11px; color:var(--grey); letter-spacing:0.05em; border-top:1px solid rgba(255,255,255,0.05); }
+  .logo-area { display:flex; align-items:center; gap:12px; }
+  .logo-dot { width:32px;height:32px;border-radius:8px; background:linear-gradient(135deg,var(--gold),var(--teal)); display:flex;align-items:center;justify-content:center; font-weight:900;font-size:13px;color:var(--navy); }
+  .logo-text { font-size:12px;font-weight:700;color:var(--grey);letter-spacing:0.1em;text-transform:uppercase; }
+  .voter-count { font-size:13px;color:var(--grey); }
+  .voter-count span { color:var(--teal-light);font-weight:700; }
+  .event-badge { font-size:12px;font-weight:600;color:var(--gold); background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.25); padding:5px 14px;border-radius:20px; }
+
+  /* ── ANSWERED TRACKER ── */
+  .answered-tracker { display:flex;align-items:center;gap:8px; }
+  .a-dot { width:28px;height:5px;border-radius:3px;background:rgba(255,255,255,0.1);transition:all 0.3s; }
+  .a-dot.done { background:var(--teal); }
+  .a-dot-label { font-size:12px;color:var(--grey);margin-left:6px; }
+  .a-dot-label span { color:var(--teal-light);font-weight:700; }
+
+  /* ══════════════
+     WELCOME
+  ══════════════ */
+  #screen-welcome {
+    align-items:center;justify-content:center;text-align:center;padding:60px 40px;
+    background: radial-gradient(ellipse at 50% 0%,rgba(0,180,180,0.08) 0%,transparent 55%),
+                radial-gradient(ellipse at 85% 90%,rgba(201,168,76,0.06) 0%,transparent 50%),
+                var(--navy);
+  }
+  .welcome-eyebrow { font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--teal);margin-bottom:16px; }
+  .welcome-title { font-family:'DM Serif Display',serif; font-size:clamp(34px,5vw,60px); line-height:1.1;color:var(--white);margin-bottom:16px; }
+  .welcome-title em { color:var(--gold);font-style:italic; }
+  .welcome-sub { font-size:16px;color:var(--grey);max-width:520px;margin:0 auto 40px;line-height:1.65; }
+  .welcome-sub strong { color:var(--off-white);font-weight:600; }
+  .stat-row { display:flex;gap:20px;justify-content:center;margin-bottom:48px;flex-wrap:wrap; }
+  .stat-pill { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:14px 26px;text-align:center;min-width:110px; }
+  .stat-pill .num { font-size:24px;font-weight:800;color:var(--teal-light); }
+  .stat-pill .lbl { font-size:11px;color:var(--grey);margin-top:2px; }
+  .btn-primary { background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy);font-size:16px;font-weight:800; padding:17px 50px;border-radius:50px;border:none;cursor:pointer;letter-spacing:0.02em;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 8px 30px rgba(201,168,76,0.28); }
+  .btn-primary:hover { transform:translateY(-2px);box-shadow:0 12px 40px rgba(201,168,76,0.42); }
+  .welcome-note { margin-top:16px;font-size:12px;color:var(--grey); }
+
+  /* ══════════════
+     VOTE SCREEN
+  ══════════════ */
+  #screen-vote { padding-bottom:90px; }
+
+  .vote-header { padding:28px 48px 0; }
+  .vote-header-title { font-family:'DM Serif Display',serif; font-size:clamp(18px,2.2vw,26px); color:var(--white); line-height:1.3; }
+
+  /* All-questions wrapper */
+  .questions-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0;
+    padding: 16px 24px 100px;
+    align-items: stretch;
+  }
+
+  /* Question block */
+  .q-block {
+    padding: 14px 8px;
+    border-right: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .q-block:last-child { border-right: none; }
+
+  .q-number { font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--grey);margin-bottom:5px; }
+  .q-title {
+    font-size:13px;font-weight:700;color:var(--navy);line-height:1.5;
+    margin-bottom:8px;
+    min-height:80px;
+    display:flex;align-items:center;
+    text-align:left;
+    background:linear-gradient(135deg,var(--gold),var(--gold-light));
+    border-radius:7px;padding:9px 10px;
+  }
+
+
+
+
+
+
+
+
+
+  /* Card grid — vertical inside column */
+  .card-grid { display:flex; flex-direction:column; gap:6px; flex:1; align-items:stretch; }
+
+  /* Card — fixed height, no description */
+  .uc-card {
+    background:rgba(255,255,255,0.035);
+    border:1.5px solid rgba(255,255,255,0.08);
+    border-radius:10px; padding:10px 11px;
+    cursor:pointer; transition:all 0.18s;
+    display:flex; flex-direction:column; justify-content:center;
+    position:relative;
+    flex:1;
+  }
+  .uc-card:hover { border-color:rgba(255,255,255,0.22); background:rgba(255,255,255,0.06); transform:translateY(-1px); }
+
+  /* Selected colours */
+  .uc-card.sel-1 { border-color:var(--gold);        background:rgba(201,168,76,0.08);  box-shadow:0 0 0 2px rgba(201,168,76,0.15); }
+  .uc-card.sel-2 { border-color:var(--coral-light); background:rgba(232,82,74,0.08);   box-shadow:0 0 0 2px rgba(232,82,74,0.15); }
+  .uc-card.sel-3 { border-color:var(--teal);        background:rgba(0,180,180,0.08);   box-shadow:0 0 0 2px rgba(0,180,180,0.15); }
+  .uc-card.sel-4 { border-color:var(--purple-light);background:rgba(124,58,237,0.08);  box-shadow:0 0 0 2px rgba(124,58,237,0.15); }
+  .uc-card.sel-5 { border-color:var(--green);       background:rgba(46,204,113,0.08);  box-shadow:0 0 0 2px rgba(46,204,113,0.15); }
+  .uc-card.sel-6 { border-color:var(--purple-light);background:rgba(124,58,237,0.08); box-shadow:0 0 0 2px rgba(124,58,237,0.15); }
+
+  .card-left { display:contents; }
+  .card-right { display:none; }
+
+  /* Card tag = big bold official term */
+  .card-tag { font-size:13px;font-weight:800;line-height:1.3;margin-bottom:2px;display:flex;align-items:center;gap:4px; }
+  .tag-gold    { color:var(--gold); }
+  .tag-coral   { color:var(--coral-light); }
+  .tag-teal    { color:var(--teal-light); }
+  .tag-purple  { color:var(--purple-light); }
+  .tag-green   { color:var(--green); }
+
+  /* Card title = small grey subtitle under the term */
+  .card-title { font-size:12px;font-weight:500;color:rgba(255,255,255,0.6);line-height:1.4;margin-top:2px;text-align:justify; }
+
+  /* Check badge */
+  .check-badge {
+    position:absolute; top:10px;right:10px;
+    width:20px;height:20px;border-radius:50%;
+    display:none;align-items:center;justify-content:center;
+    font-size:10px;font-weight:900;color:var(--navy);
+  }
+  .sel-1 .check-badge { display:flex;background:var(--gold); }
+  .sel-2 .check-badge { display:flex;background:var(--coral-light); }
+  .sel-3 .check-badge { display:flex;background:var(--teal); }
+  .sel-4 .check-badge { display:flex;background:var(--purple-light); }
+  .sel-5 .check-badge { display:flex;background:var(--green); }
+  .uc-card.sel-6 { border-color:#E879F9; background:rgba(232,121,249,0.08); box-shadow:0 0 0 2px rgba(232,121,249,0.15); }
+  .sel-6 .check-badge { display:flex;background:#E879F9; color:var(--navy); }
+  .sel-6 .check-badge { display:flex;background:var(--purple-light); }
+
+  /* Sticky submit */
+  .submit-bar { position:fixed;bottom:0;left:0;right:0; display:flex;align-items:center;justify-content:space-between; padding:14px 48px; background:rgba(11,31,58,0.97);backdrop-filter:blur(14px); border-top:1px solid rgba(255,255,255,0.08);z-index:100; }
+  .submit-bar-info { font-size:13px;color:var(--grey); }
+  .submit-bar-info span { color:var(--teal-light);font-weight:700; }
+  .btn-submit { background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--navy);font-size:15px;font-weight:800; padding:13px 42px;border-radius:50px;border:none;cursor:pointer; opacity:0.3;pointer-events:none;transition:all 0.2s; box-shadow:0 4px 20px rgba(201,168,76,0.18); }
+  .btn-submit.enabled { opacity:1;pointer-events:all; }
+  .btn-submit.enabled:hover { transform:translateY(-1px);box-shadow:0 8px 28px rgba(201,168,76,0.38); }
+
+  /* ══════════════
+     CAPTURE
+  ══════════════ */
+  #screen-capture { align-items:center;justify-content:center;padding:60px 40px; background:radial-gradient(ellipse at 50% 30%,rgba(201,168,76,0.07) 0%,transparent 60%),var(--navy); }
+  .capture-icon { width:68px;height:68px;border-radius:18px;margin:0 auto 24px; background:linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.3); display:flex;align-items:center;justify-content:center;font-size:28px; }
+  .capture-title { font-family:'DM Serif Display',serif;font-size:32px;color:var(--white);margin-bottom:10px;text-align:center; }
+  .capture-sub { font-size:15px;color:var(--grey);max-width:420px;margin:0 auto 28px;line-height:1.65;text-align:center; }
+  .capture-sub strong { color:var(--off-white);font-weight:600; }
+  .capture-form { width:100%;max-width:440px;margin:0 auto; }
+  .form-row { display:flex;gap:10px; }
+  .form-field { background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.11); border-radius:12px;padding:14px 16px;width:100%; font-family:'Inter',sans-serif;font-size:14px;color:var(--white);margin-bottom:10px;outline:none;transition:border-color 0.2s; }
+  .form-field::placeholder { color:var(--grey); }
+  .form-field:focus { border-color:var(--teal); }
+  .form-field.optional { opacity:0.7; }
+  .capture-privacy { font-size:11px;color:var(--grey);margin-top:8px;text-align:center; }
+  .capture-privacy a { color:var(--teal);text-decoration:none; }
+  .skip-link { display:block;text-align:center;margin-top:12px;background:none;border:none;color:var(--grey);font-size:13px;cursor:pointer;text-decoration:underline;font-family:'Inter',sans-serif; }
+
+  /* ══════════════
+     RESULT
+  ══════════════ */
+  #screen-result { align-items:stretch;justify-content:flex-start;padding:0; background:radial-gradient(ellipse at 50% 20%,rgba(0,180,180,0.09) 0%,transparent 55%),var(--navy); }
+  .result-eyebrow { font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--teal);margin-bottom:12px; }
+  .result-title { font-family:'DM Serif Display',serif;font-size:clamp(24px,4vw,42px);color:var(--white);margin-bottom:8px;line-height:1.2;text-align:center; }
+  .result-title em { color:var(--gold);font-style:italic; }
+  .result-summary { display:grid;grid-template-columns:repeat(6,1fr);gap:8px;max-width:900px;width:100%;margin:24px auto; }
+  .rs-card { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:12px;text-align:center; }
+  .rs-q { font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:5px; }
+  .rs-answer { font-size:11px;font-weight:600;color:var(--white);line-height:1.4; }
+  .result-insight { background:rgba(0,180,180,0.07);border:1px solid rgba(0,180,180,0.18);border-radius:14px;padding:18px 22px;max-width:620px;width:100%;font-size:13px;color:var(--off-white);line-height:1.7;margin:0 auto 24px; }
+  .result-insight strong { color:var(--teal-light); }
+  .result-actions { display:flex;gap:10px;justify-content:center;flex-wrap:wrap; }
+  .btn-secondary { background:transparent;border:1.5px solid rgba(255,255,255,0.18);color:var(--white);font-size:13px;font-weight:600;padding:11px 24px;border-radius:50px;cursor:pointer;transition:all 0.2s; }
+  .btn-secondary:hover { border-color:var(--white);background:rgba(255,255,255,0.05); }
+  .btn-leaderboard { background:rgba(0,180,180,0.12);border:1.5px solid var(--teal);color:var(--teal-light);font-size:13px;font-weight:700;padding:11px 24px;border-radius:50px;cursor:pointer;transition:all 0.2s; }
+  .btn-leaderboard:hover { background:rgba(0,180,180,0.22); }
+
+  /* ══════════════
+     LEADERBOARD
+  ══════════════ */
+  #screen-leaderboard { padding:0; }
+  .lb-body { padding:28px 48px;flex:1; }
+  .lb-header { display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px; }
+  .lb-title { font-family:'DM Serif Display',serif;font-size:clamp(20px,3vw,34px);color:var(--white);line-height:1.2; }
+  .lb-title em { color:var(--gold);font-style:italic; }
+  .lb-subtitle { font-size:12px;color:var(--grey);margin-top:4px; }
+  .live-badge { display:flex;align-items:center;gap:7px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.28);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--green);white-space:nowrap; }
+  .live-dot { width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+  .lb-section-head { font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;padding:14px 0 6px;color:var(--grey);border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:5px; }
+  .lb-list { display:flex;flex-direction:column;gap:7px; }
+  .lb-row { display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 16px;transition:all 0.25s; }
+  .lb-row.top1 { background:rgba(201,168,76,0.07);border-color:rgba(201,168,76,0.26); }
+  .lb-row.top2 { background:rgba(0,180,180,0.05);border-color:rgba(0,180,180,0.18); }
+  .lb-row.top3 { background:rgba(124,58,237,0.05);border-color:rgba(167,139,250,0.18); }
+  .lb-row.highlight { border-color:var(--teal);box-shadow:0 0 0 2px rgba(0,180,180,0.15); }
+  .lb-rank { font-size:16px;font-weight:900;width:26px;text-align:center;color:var(--grey); }
+  .lb-row.top1 .lb-rank { color:var(--gold); }
+  .lb-row.top2 .lb-rank { color:var(--teal); }
+  .lb-row.top3 .lb-rank { color:var(--purple-light); }
+  .lb-info { flex:1;min-width:0; }
+  .lb-usecase { font-size:13px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .lb-cat { font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-top:2px; }
+  .lb-bar-wrap { flex:2; }
+  .lb-bar-bg { background:rgba(255,255,255,0.06);border-radius:6px;height:7px;overflow:hidden; }
+  .lb-bar-fill { height:100%;border-radius:6px;transition:width 0.9s cubic-bezier(.4,0,.2,1); }
+  .fill-gold   { background:linear-gradient(90deg,var(--gold),var(--gold-light)); }
+  .fill-coral  { background:linear-gradient(90deg,var(--coral),var(--coral-light)); }
+  .fill-teal   { background:linear-gradient(90deg,var(--teal),var(--teal-light)); }
+  .fill-purple { background:linear-gradient(90deg,var(--purple),var(--purple-light)); }
+  .fill-green  { background:linear-gradient(90deg,#27AE60,var(--green)); }
+  .fill-pink   { background:linear-gradient(90deg,#9333EA,#E879F9); }
+  .lb-count { font-size:16px;font-weight:800;color:var(--white);min-width:30px;text-align:right; }
+  .lb-pct   { font-size:11px;color:var(--grey);min-width:34px;text-align:right; }
+  .lb-footer { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px; padding:16px 48px;border-top:1px solid rgba(255,255,255,0.07);background:rgba(11,31,58,0.9); }
+  .lb-footer-stat { font-size:12px;color:var(--grey); }
+  .lb-footer-stat span { color:var(--white);font-weight:700; }
+
+  .q-block-1 { border-left:3px solid var(--gold);        background:rgba(201,168,76,0.03); }
+  .q-block-2 { border-left:3px solid var(--coral-light); background:rgba(232,82,74,0.03); }
+  .q-block-3 { border-left:3px solid var(--teal);        background:rgba(0,180,180,0.03); }
+  .q-block-4 { border-left:3px solid var(--purple-light);background:rgba(124,58,237,0.03); }
+  .q-block-5 { border-left:3px solid var(--green);       background:rgba(46,204,113,0.03); }
+  .q-block-6 { border-left:3px solid var(--purple-light);background:rgba(124,58,237,0.03); }
+
+  .q-block-1 .q-title { background:linear-gradient(135deg,var(--gold),var(--gold-light));          color:var(--navy); }
+  .q-block-2 .q-title { background:linear-gradient(135deg,var(--coral),var(--coral-light));        color:var(--white); }
+  .q-block-3 .q-title { background:linear-gradient(135deg,var(--teal),var(--teal-light));          color:var(--navy); }
+  .q-block-4 .q-title { background:linear-gradient(135deg,var(--purple),var(--purple-light));      color:var(--white); }
+  .q-block-5 .q-title { background:linear-gradient(135deg,#27AE60,var(--green));                   color:var(--navy); }
+  .q-block-6 .q-title { background:linear-gradient(135deg,var(--purple),var(--purple-light));      color:var(--white); }
+
+  /* ══════════════
+     REPORT PAGE (Screen 4) — single viewport, 4 horizontal panels
+  ══════════════ */
+  #screen-result { display:flex; flex-direction:column; }
+  #screen-result.active { display:flex; }
+
+  .rp-topbar-centre { display:flex; align-items:center; gap:10px; flex:1; justify-content:center; }
+  .report-eyebrow-inline { font-size:12px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--teal); }
+  .rp-badge { display:flex; align-items:center; gap:5px; background:rgba(46,204,113,0.1); border:1px solid rgba(46,204,113,0.28); border-radius:20px; padding:3px 10px; font-size:11px; font-weight:600; color:var(--green); }
+  .rhb-dot { width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite; }
+
+  /* Selections strip */
+  .rp-strip { display:grid; grid-template-columns:repeat(6,1fr); gap:5px; padding:6px 16px; border-bottom:1px solid rgba(255,255,255,0.07); background:rgba(0,0,0,0.15); flex-shrink:0; }
+  .rs-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:7px; padding:5px 6px; text-align:center; }
+  .rs-q  { font-size:9.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:2px; }
+  .rs-answer { font-size:10.5px; font-weight:600; color:var(--white); line-height:1.25; }
+
+  /* 4-column panel row — fills remaining height, no overflow clip */
+  .rp-panels { display:grid; grid-template-columns:repeat(4,1fr); gap:0; flex:1; min-height:0; }
+
+  .rp-panel { display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.08); padding:12px 14px 10px; min-height:0; overflow:hidden; }
+  .rp-panel:last-child { border-right:none; }
+  .rp-panel-gold   { background:rgba(201,168,76,0.04);  border-top:2px solid var(--gold); }
+  .rp-panel-coral  { background:rgba(232,82,74,0.04);   border-top:2px solid var(--coral-light); }
+  .rp-panel-teal   { background:rgba(0,180,180,0.04);   border-top:2px solid var(--teal); }
+  .rp-panel-mastek { background:rgba(124,58,237,0.04);  border-top:2px solid var(--purple-light); }
+
+  /* Panel header */
+  .rp-panel-hd { display:flex; align-items:center; gap:7px; margin-bottom:8px; flex-shrink:0; }
+  .rp-panel-icon { width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; flex-shrink:0; }
+  .sec-icon-gold   { background:rgba(201,168,76,0.15); color:var(--gold);         border:1px solid rgba(201,168,76,0.3); }
+  .sec-icon-coral  { background:rgba(232,82,74,0.15);  color:var(--coral-light);  border:1px solid rgba(232,82,74,0.3); }
+  .sec-icon-teal   { background:rgba(0,180,180,0.15);  color:var(--teal-light);   border:1px solid rgba(0,180,180,0.3); }
+  .sec-icon-purple { background:rgba(124,58,237,0.15); color:var(--purple-light); border:1px solid rgba(124,58,237,0.3); font-size:9px; }
+  .rp-panel-title  { font-size:13px; font-weight:700; color:var(--white); line-height:1.25; flex:1; }
+  .section-generating { display:flex;align-items:center;gap:4px;font-size:9px;color:var(--teal);flex-shrink:0; }
+  .section-generating.done { display:none; }
+  .gen-spinner { width:10px;height:10px;border:1.5px solid rgba(0,180,180,0.2);border-top-color:var(--teal);border-radius:50%;animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Exec lines — 4 equal-height rows */
+  .exec-lines { display:flex;flex-direction:column;gap:5px;flex:1;min-height:0; }
+  .exec-line {
+    font-size:12.5px; color:var(--off-white); line-height:1.45;
+    padding:7px 10px;
+    background:rgba(255,255,255,0.03);
+    border-left:2px solid var(--gold);
+    border-radius:0 5px 5px 0;
+    flex:1; min-height:0;
+    overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+    opacity:0; transform:translateY(5px);
+    transition:opacity 0.4s,transform 0.4s;
+  }
+  .exec-line.visible { opacity:1; transform:translateY(0); }
+  .exec-line strong { color:var(--gold); }
+  .exec-line.skeleton { opacity:0.4; transform:none; background:rgba(255,255,255,0.06); border-left-color:rgba(201,168,76,0.2); animation:shimmer 1.5s ease-in-out infinite; display:block; }
+  @keyframes shimmer { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+
+  /* Vertical insight cards (panels 2 & 3) */
+  .rp-vert-cards { display:flex;flex-direction:column;gap:5px;flex:1;min-height:0; }
+  .rp-card {
+    flex:1; min-height:0;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09);
+    border-radius:8px; padding:8px 10px;
+    display:flex; flex-direction:column; gap:4px;
+    overflow:hidden;
+    opacity:0; transform:translateY(6px);
+    transition:opacity 0.4s,transform 0.4s;
+  }
+  .rp-card.visible { opacity:1; transform:translateY(0); }
+  .rp-card.skeleton-card { animation:shimmer 1.5s ease-in-out infinite; opacity:0.4; transform:none; }
+  .ic-rank { width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0; }
+  .ic-rank-1 { background:rgba(201,168,76,0.15);  color:var(--gold);         border:1px solid rgba(201,168,76,0.3); }
+  .ic-rank-2 { background:rgba(0,180,180,0.12);   color:var(--teal-light);   border:1px solid rgba(0,180,180,0.25); }
+  .ic-rank-3 { background:rgba(124,58,237,0.12);  color:var(--purple-light); border:1px solid rgba(124,58,237,0.25); }
+  .ic-title  { font-size:12.5px;font-weight:700;color:var(--white);line-height:1.25;flex-shrink:0; }
+  .ic-body   { font-size:11px;color:rgba(255,255,255,0.58);line-height:1.4;flex:1;min-height:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical; }
+  .ic-tag    { display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:20px;flex-shrink:0; }
+  .ic-tag-improve { background:rgba(232,82,74,0.12);color:var(--coral-light);border:1px solid rgba(232,82,74,0.2); }
+  .ic-tag-game    { background:rgba(0,180,180,0.1); color:var(--teal-light); border:1px solid rgba(0,180,180,0.2); }
+
+  /* Mastek panel */
+  .rp-mastek-list { display:flex;flex-direction:column;gap:5px;flex:1;min-height:0; }
+  .rp-mk-item { display:flex;gap:7px;align-items:flex-start;background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.1);border-radius:7px;padding:7px 8px;flex:1;min-height:0;overflow:hidden; }
+  .rp-mk-icon { font-size:14px;flex-shrink:0;margin-top:1px; }
+  .rp-mk-title { font-size:12px;font-weight:700;color:var(--gold);margin-bottom:2px;line-height:1.2;flex-shrink:0; }
+  .rp-mk-body  { font-size:10.5px;color:rgba(255,255,255,0.55);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical; }
+  .rp-mk-cta { margin-top:7px;flex-shrink:0;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:9px 10px; }
+
+  /* ══════════ LIGHT-CARD AI ASSESSMENT REPORT ══════════ */
+  .lcr-wrap { flex:1; background:var(--navy); }
+  .lcr-page { max-width:860px; margin:0 auto; padding:44px 48px 56px; font-family:'Inter',sans-serif; color:var(--white); }
+  .lcr-eyebrow { font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--grey); margin-bottom:10px; }
+  .lcr-title { font-family:'DM Serif Display',serif; font-size:clamp(26px,4vw,38px); color:var(--white); line-height:1.15; margin-bottom:6px; }
+  .lcr-subtitle { font-size:15px; color:var(--grey); margin-bottom:34px; font-weight:400; }
+
+  .lcr-section-title { font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--grey); margin:0 0 14px; }
+
+  .lcr-score-section { display:flex; align-items:center; gap:40px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:20px; padding:32px 36px; margin-bottom:36px; }
+  .lcr-dial-wrap { position:relative; width:150px; height:150px; flex-shrink:0; }
+  .lcr-dial-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .lcr-dial-track { fill:none; stroke:rgba(255,255,255,0.1); stroke-width:14; stroke-linecap:round; }
+  .lcr-dial-fill { fill:none; stroke-width:14; stroke-linecap:round; stroke-dasharray:408; stroke-dashoffset:408; transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1); }
+  .lcr-dial-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .lcr-dial-number { font-size:34px; font-weight:900; color:var(--white); line-height:1; }
+  .lcr-dial-label { font-size:11px; color:var(--grey); margin-top:2px; font-weight:500; }
+  .lcr-score-info { flex:1; min-width:0; }
+  .lcr-score-band { display:inline-flex; align-items:center; gap:8px; padding:7px 16px; border-radius:50px; font-size:13px; font-weight:700; margin-bottom:14px; background:rgba(46,204,113,0.14); color:#4ADE80; border:1px solid rgba(74,222,128,0.35); }
+  .lcr-score-band-dot { width:8px; height:8px; border-radius:50%; background:#2ECC71; flex-shrink:0; }
+  .lcr-score-headline { font-family:'DM Serif Display',serif; font-size:21px; color:var(--white); margin-bottom:8px; line-height:1.3; }
+  .lcr-score-desc { font-size:14px; color:var(--grey); line-height:1.65; }
+
+  .lcr-opp-list { display:flex; flex-direction:column; gap:12px; margin-bottom:36px; }
+  .lcr-opp-card { display:flex; align-items:flex-start; gap:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:20px 22px; }
+  .lcr-opp-card.b-gold { border-left:4px solid var(--gold); }
+  .lcr-opp-card.b-teal { border-left:4px solid var(--teal); }
+  .lcr-opp-card.b-purple { border-left:4px solid #9B7FE0; }
+  .lcr-opp-num { width:32px; height:32px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
+  .lcr-opp-num.gold { background:rgba(201,168,76,0.15); color:var(--gold-light); }
+  .lcr-opp-num.teal { background:rgba(0,180,180,0.15); color:var(--teal-light); }
+  .lcr-opp-num.purple { background:rgba(155,127,224,0.15); color:#C6B3F5; }
+  .lcr-opp-body { flex:1; min-width:0; }
+  .lcr-opp-title { font-size:15px; font-weight:700; color:var(--white); margin-bottom:4px; }
+  .lcr-opp-desc { font-size:13px; color:var(--grey); line-height:1.6; }
+  .lcr-opp-tag { display:inline-block; margin-top:8px; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; background:rgba(201,168,76,0.15); color:var(--gold-light); }
+
+  .lcr-quickwin-box { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:24px 26px; margin-bottom:36px; display:flex; gap:18px; align-items:flex-start; }
+  .lcr-quickwin-icon { width:42px; height:42px; border-radius:10px; flex-shrink:0; background:rgba(0,180,180,0.15); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .lcr-quickwin-label { font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--teal-light); margin-bottom:6px; }
+  .lcr-quickwin-title { font-size:16px; font-weight:700; color:var(--white); margin-bottom:6px; }
+  .lcr-quickwin-desc { font-size:13px; color:var(--grey); line-height:1.6; }
+
+  .lcr-next-step { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:30px 32px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; }
+  .lcr-ns-label { font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:6px; letter-spacing:0.1em; text-transform:uppercase; }
+  .lcr-ns-title { font-size:17px; font-weight:700; color:#fff; margin-bottom:4px; }
+  .lcr-ns-desc { font-size:13px; color:rgba(255,255,255,0.55); line-height:1.5; }
+  .lcr-btn-report { background:var(--gold); color:var(--navy); font-size:14px; font-weight:800; white-space:nowrap; padding:14px 26px; border-radius:50px; border:none; cursor:pointer; transition:background 0.2s; flex-shrink:0; }
+  .lcr-btn-report:hover { background:var(--gold-light); }
+
+  .lcr-footer { border-top:1px solid rgba(255,255,255,0.09); margin-top:40px; padding-top:18px; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--grey); flex-wrap:wrap; gap:6px; }
+
+  .lcr-skeleton { animation:shimmer 1.5s ease-in-out infinite; opacity:0.5; }
+
+  /* Thank-you modal */
+  .lcr-modal-overlay { display:none; position:fixed; inset:0; background:rgba(11,31,58,0.65); z-index:500; align-items:center; justify-content:center; padding:20px; }
+  .lcr-modal-overlay.active { display:flex; }
+  .lcr-modal-card { background:#fff; border-radius:18px; max-width:420px; width:100%; padding:36px 32px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.3); }
+  .lcr-modal-icon { font-size:40px; margin-bottom:14px; }
+  .lcr-modal-title { font-family:'DM Serif Display',serif; font-size:22px; color:#0B1F3A; margin-bottom:12px; }
+  .lcr-modal-desc { font-size:14px; color:#555; line-height:1.6; margin-bottom:22px; }
+  .lcr-modal-close { background:#0B1F3A; color:#fff; font-size:14px; font-weight:700; padding:12px 28px; border-radius:50px; border:none; cursor:pointer; }
+
+  /* Executive Summary / Key Findings strip inside Section 1 */
+  .lcr-keyfindings { margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; gap:10px; }
+  .lcr-keyfindings-label { font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--grey); margin-bottom:2px; }
+  .lcr-kf-item { border-left:3px solid var(--gold); padding:2px 0 2px 12px; font-size:13px; color:rgba(255,255,255,0.78); line-height:1.55; display:flex; gap:8px; align-items:flex-start; }
+  .lcr-kf-item.b-teal { border-color:var(--teal); }
+  .lcr-kf-item.b-purple { border-color:#9B7FE0; }
+  .lcr-kf-item.b-pink { border-color:#E879F9; }
+
+  /* --- Extended report sections --- */
+  .lcr-profile-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px 28px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:24px 26px; margin-bottom:36px; }
+  .lcr-profile-item-full { grid-column:1 / -1; }
+  .lcr-profile-label { font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--grey); margin-bottom:8px; }
+  .lcr-profile-value { font-size:14px; color:#fff; font-weight:600; }
+  .lcr-chip-row { display:flex; flex-wrap:wrap; gap:8px; }
+  .lcr-chip { font-size:12px; font-weight:600; padding:6px 14px; border-radius:50px; background:rgba(0,180,180,0.12); color:var(--teal-light); border:1px solid rgba(0,180,180,0.3); }
+
+  .lcr-table { width:100%; border-collapse:collapse; margin-bottom:36px; font-size:13px; }
+  .lcr-table th { text-align:left; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--grey); font-weight:700; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.15); }
+  .lcr-table td { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.07); color:rgba(255,255,255,0.85); vertical-align:top; }
+  .lcr-table tr:last-child td { border-bottom:none; }
+  .lcr-table .lcr-score-cell { font-weight:800; color:#fff; }
+  .lcr-tag-pill { font-size:11px; font-weight:700; padding:3px 11px; border-radius:50px; display:inline-block; }
+  .lcr-tag-strong { background:rgba(0,180,180,0.16); color:var(--teal-light); }
+  .lcr-tag-moderate { background:rgba(201,168,76,0.16); color:var(--gold-light); }
+  .lcr-tag-developing { background:rgba(233,163,72,0.16); color:#F0B860; }
+  .lcr-tag-emerging { background:rgba(232,82,74,0.16); color:#F08A83; }
+  .lcr-tag-high { background:rgba(232,82,74,0.16); color:#F08A83; }
+  .lcr-tag-medium { background:rgba(201,168,76,0.16); color:var(--gold-light); }
+  .lcr-tag-low { background:rgba(0,180,180,0.16); color:var(--teal-light); }
+  .lcr-tag-critical { background:rgba(232,82,74,0.22); color:#FF9D95; }
+
+  .lcr-gap-card { border-left:4px solid var(--gold); padding-left:18px; margin-bottom:16px; }
+  .lcr-gap-theme { font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--gold-light); margin-bottom:10px; }
+  .lcr-gap-row { display:grid; grid-template-columns:150px 1fr; gap:6px 16px; font-size:13px; margin-bottom:6px; line-height:1.55; }
+  .lcr-gap-row-label { color:var(--grey); font-weight:600; }
+  .lcr-gap-row-val { color:rgba(255,255,255,0.85); }
+
+  .lcr-theme-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:36px; }
+  .lcr-theme-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:18px 20px; }
+  .lcr-theme-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .lcr-theme-name { font-size:14px; font-weight:700; color:#fff; }
+  .lcr-theme-score { font-size:20px; font-weight:900; color:var(--teal-light); }
+  .lcr-theme-desc { font-size:12.5px; color:rgba(255,255,255,0.7); line-height:1.6; margin-bottom:6px; }
+
+  .lcr-heat-row { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .lcr-heat-row:last-child { border-bottom:none; }
+  .lcr-heat-level { width:78px; flex-shrink:0; font-size:11px; font-weight:800; text-align:center; padding:5px 0; border-radius:6px; text-transform:uppercase; }
+  .lcr-heat-name { font-size:13px; color:rgba(255,255,255,0.85); }
+  .lcr-heat-wrap { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:8px 22px; margin-bottom:36px; }
+
+  .lcr-roadmap { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:36px; }
+  .lcr-roadmap-col { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:18px 20px; }
+  .lcr-roadmap-head { font-size:12px; font-weight:800; color:var(--gold-light); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px; }
+  .lcr-roadmap-item { font-size:12.5px; color:rgba(255,255,255,0.8); padding:6px 0 6px 16px; position:relative; line-height:1.5; }
+  .lcr-roadmap-item::before { content:'→'; position:absolute; left:0; color:var(--teal); }
+
+  .lcr-reco-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:20px 22px; margin-bottom:12px; }
+  .lcr-reco-title { font-size:15px; font-weight:700; color:#fff; margin-bottom:6px; }
+  .lcr-reco-why { font-size:13px; color:rgba(255,255,255,0.75); line-height:1.6; margin-bottom:10px; }
+  .lcr-reco-meta { display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--grey); }
+  .lcr-reco-meta b { color:#fff; }
+
+  .lcr-benefit-list { display:flex; flex-direction:column; gap:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:22px 24px; margin-bottom:36px; }
+  .lcr-benefit-item { font-size:13.5px; color:rgba(255,255,255,0.85); display:flex; gap:10px; align-items:flex-start; line-height:1.5; }
+  .lcr-benefit-item b { color:var(--teal-light); }
+
+  @media (max-width:640px){
+    .lcr-profile-grid, .lcr-theme-grid, .lcr-roadmap { grid-template-columns:1fr; }
+  }
+
+  @media print {
+    * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    body { background:#fff !important; }
+    body * { visibility:hidden; }
+    .lcr-wrap { display:block !important; overflow:visible !important; background:#fff !important; }
+    .lcr-wrap, .lcr-wrap * { visibility:visible; }
+    .lcr-wrap { position:absolute; left:0; top:0; width:100%; }
+    .lcr-page, .lcr-page * { color:#0B1F3A; }
+    .lcr-subtitle, .lcr-eyebrow, .lcr-section-title, .lcr-dial-label, .lcr-score-desc, .lcr-opp-desc, .lcr-quickwin-desc, .lcr-footer, .lcr-kf-item,
+    .lcr-profile-label, .lcr-theme-desc, .lcr-gap-row-label, .lcr-heat-name, .lcr-reco-why, .lcr-reco-meta, .lcr-roadmap-item, .lcr-benefit-item { color:#555 !important; }
+    .lcr-score-section, .lcr-opp-card, .lcr-quickwin-box, .lcr-profile-grid, .lcr-theme-card, .lcr-heat-wrap, .lcr-roadmap-col, .lcr-reco-card, .lcr-benefit-list, .lcr-gap-card { background:#F7F9FC !important; border-color:#E8EDF4 !important; }
+    .lcr-table th { color:#555 !important; border-color:#ddd !important; }
+    .lcr-table td { color:#0B1F3A !important; border-color:#eee !important; }
+    .lcr-next-step { background:#0B1F3A !important; }
+    .lcr-next-step, .lcr-next-step * { color:#fff !important; }
+    .lcr-btn-report { display:none !important; }
+    .lcr-page { padding:20px 10px !important; }
+    .lcr-theme-grid, .lcr-roadmap, .lcr-profile-grid { grid-template-columns:1fr 1fr !important; }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ══ SCREEN 1 — WELCOME ══ -->
+<div class="screen active" id="screen-welcome">
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:60px 40px;text-align:center;">
+    <div class="welcome-eyebrow" style="font-size:15px;">Public Finance Live 2026</div>
+    <h1 class="welcome-title">What does public sector finance need from AI?</h1>
+    <p class="welcome-sub">Tell us what's most important to your organisation and we'll identify where AI can reduce operational gaps, improve efficiency and create lasting business value.<br><br>Take our 2-minute assessment and receive your personalised AI Readiness Report instantly.</p>
+    <div class="stat-row">
+      <div class="stat-pill"><div class="num">183</div><div class="lbl">Votes cast today</div></div>
+      <div class="stat-pill"><div class="num">6</div><div class="lbl">Quick questions</div></div>
+      <div class="stat-pill"><div class="num">100+</div><div class="lbl">Finance AI use cases</div></div>
+      <div class="stat-pill"><div class="num">£0</div><div class="lbl">Extra licence cost</div></div>
+    </div>
+    <button class="btn-primary" onclick="showScreen('screen-vote')">Share Your Priorities →</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 2 — ALL 5 QUESTIONS ══ -->
+<div class="screen" id="screen-vote">
+  <div class="top-bar">
+    <div class="tb-row1">
+      <div class="logo-area">
+        <div class="logo-dot">AI</div>
+        <div class="logo-text">Mastek</div>
+      </div>
+      <div class="answered-tracker">
+        <div class="a-dot" id="dot-1"></div>
+        <div class="a-dot" id="dot-2"></div>
+        <div class="a-dot" id="dot-3"></div>
+        <div class="a-dot" id="dot-4"></div>
+        <div class="a-dot" id="dot-5"></div>
+        <div class="a-dot" id="dot-6"></div>
+        <div class="a-dot" id="dot-6"></div>
+        <div class="a-dot-label"><span id="answered-count">0</span> of 6 answered</div>
+      </div>
+    </div>
+    <div class="tb-row2">📍 Public Finance Live 2026 · London</div>
+  </div>
+
+  <div style="padding:20px 32px 4px;">
+    <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(16px,2vw,22px);color:var(--white);line-height:1.3;">Which AI use case would make the biggest difference to your council&#x2019;s finance function?</h2>
+  </div>
+
+  <div class="questions-row">
+  <!-- Q1 -->
+  <div class="q-block q-block-1">
+    <div class="q-number">Question 1 of 6</div>
+    <h3 class="q-title">If AI in local government finance delivered optimisation, where would you want it first?</h3>
+    <div class="card-grid" id="grid-1">
+      <div class="uc-card" data-q="1" data-id="fraud" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-gold">🛡 Fraud &amp; Payment Integrity</div>
+          <div class="card-title">Every payment validated before it leaves</div>
+        </div>
+        <div class="card-right">Every transaction checked against policy in real time, duplicates and anomalies flagged before release.</div>
+      </div>
+      <div class="uc-card" data-q="1" data-id="demand" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-gold">📈 Demand-Led Cost Forecasting</div>
+          <div class="card-title">Predict care &amp; housing pressure early</div>
+        </div>
+        <div class="card-right">Cost pressures forecast 6–12 months ahead using live demand data, act before the overspend, not after.</div>
+      </div>
+      <div class="uc-card" data-q="1" data-id="reporting" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-gold">⏱ Automated Variance Narratives</div>
+          <div class="card-title">Period close commentary in minutes</div>
+        </div>
+        <div class="card-right">AI drafts variance narratives and committee reports from live data, officers focus on analysis, not write-ups.</div>
+      </div>
+      <div class="uc-card" data-q="1" data-id="mtfs" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-gold">📋 Grant &amp; Funding Compliance</div>
+          <div class="card-title">Never miss a funding opportunity or compliance deadline</div>
+        </div>
+        <div class="card-right">Multiple funding scenarios stress-tested in hours, not weeks of manual spreadsheet modelling.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="q-block q-block-2">
+    <div class="q-number">Question 2 of 6</div>
+    <h3 class="q-title">When a service overspend hits, how early does your system tell you?</h3>
+    <div class="card-grid" id="grid-2">
+      <div class="uc-card" data-q="2" data-id="early" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-coral">✅ Before it becomes a problem</div>
+          <div class="card-title">Live alerts flag trends before threshold</div>
+        </div>
+        <div class="card-right">Our system surfaces pressure points in real time, we intervene before the period closes.</div>
+      </div>
+      <div class="uc-card" data-q="2" data-id="monthend" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-coral">📅 At month-end monitoring</div>
+          <div class="card-title">We see it, rarely with time to correct</div>
+        </div>
+        <div class="card-right">The data arrives on time, but by then, the overspend is already baked in.</div>
+      </div>
+      <div class="uc-card" data-q="2" data-id="informal" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-coral">📊 After the monitoring report</div>
+          <div class="card-title">Numbers confirmed, but the window to act has narrowed</div>
+        </div>
+        <div class="card-right">Finance is the last to know, the system lags behind what directors already know on the ground.</div>
+      </div>
+      <div class="uc-card" data-q="2" data-id="crisis" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-coral">🚨 When it&#x2019;s already a crisis</div>
+          <div class="card-title">Data is clean only when damage is done</div>
+        </div>
+        <div class="card-right">Reconciliation cycles mean we're always reporting history — never the actual position.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="q-block q-block-3">
+    <div class="q-number">Question 3 of 6</div>
+    <h3 class="q-title">What keeps your Section 151 Officer up at night?</h3>
+    <div class="card-grid" id="grid-3">
+      <div class="uc-card" data-q="3" data-id="close" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-teal">🛡 Statutory Accounts Assurance</div>
+          <div class="card-title">Accounts that close on time, error-free</div>
+        </div>
+        <div class="card-right">AI catches miscoding and reconciliation gaps before they reach your external auditor.</div>
+      </div>
+      <div class="uc-card" data-q="3" data-id="overspend" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-teal">📊 Budget Monitoring &amp; Variance</div>
+          <div class="card-title">From reporting overspend to preventing it</div>
+        </div>
+        <div class="card-right">Directorate pressure points surfaced weeks before period end, time to act, not just report.</div>
+      </div>
+      <div class="uc-card" data-q="3" data-id="payintegrity" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-teal">🔒 Payment Integrity &amp; Fraud</div>
+          <div class="card-title">Every payment validated before release</div>
+        </div>
+        <div class="card-right">Every payment validated against council policy before release, duplicates flagged automatically.</div>
+      </div>
+      <div class="uc-card" data-q="3" data-id="reserves" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-teal">💷 Reserves Sustainability</div>
+          <div class="card-title">General fund won&#x2019;t survive another drawdown year</div>
+        </div>
+        <div class="card-right">Reserves modelled against all cost pressure scenarios, so drawdown decisions are informed, not reactive.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="q-block q-block-4">
+    <div class="q-number">Question 4 of 6</div>
+    <h3 class="q-title">If your finance function had greater capacity, where would you want it to create the greatest value for your organisation?</h3>
+    <div class="card-grid" id="grid-4">
+      <div class="uc-card" data-q="4" data-id="periodclose" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-purple">⏱ Period Close &amp; Reporting</div>
+          <div class="card-title">Month-end commentary done automatically</div>
+        </div>
+        <div class="card-right">AI produces month-end reports and variance commentary, officers focus on analysis, not write-ups.</div>
+      </div>
+      <div class="uc-card" data-q="4" data-id="partnering" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-purple">🤝 Finance Business Partnering</div>
+          <div class="card-title">Budget holders self-serve without calling finance</div>
+        </div>
+        <div class="card-right">"What's my remaining budget?" answered instantly, fewer interruptions to your central finance team.</div>
+      </div>
+      <div class="uc-card" data-q="4" data-id="forecasting" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-purple">📈 Demand &amp; Cost Forecasting</div>
+          <div class="card-title">Predict service pressures before they impact the budget</div>
+        </div>
+        <div class="card-right">AI models demand trends in care and housing, flagging cost pressure months before it hits the budget.</div>
+      </div>
+      <div class="uc-card" data-q="4" data-id="insights" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-purple">💡 Data &amp; Management Insights</div>
+          <div class="card-title">Turn finance data into faster, better-informed decisions</div>
+        </div>
+        <div class="card-right">AI surfaces the trends buried in your finance data, giving leadership decisions to make, not just numbers to read.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q5 -->
+  <div class="q-block q-block-5">
+    <div class="q-number">Question 5 of 6</div>
+    <h3 class="q-title">How resilient is your finance function if key finance expertise disappears overnight?</h3>
+    <div class="card-grid" id="grid-5">
+      <div class="uc-card" data-q="5" data-id="sameday" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-green">✅ Minimal Risk</div>
+          <div class="card-title">Processes are automated, standardised and well-documented</div>
+        </div>
+        <div class="card-right">Our modelling is live — sensitivity analysis runs in the background continuously.</div>
+      </div>
+      <div class="uc-card" data-q="5" data-id="week" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-green">⚠️ Moderate Risk</div>
+          <div class="card-title">Some activities still rely on individual knowledge</div>
+        </div>
+        <div class="card-right">We can reforecast, but it comes at a cost, everything else stops while we rebuild the numbers.</div>
+      </div>
+      <div class="uc-card" data-q="5" data-id="weeks" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-green">🔴 Significant Risk</div>
+          <div class="card-title">Critical processes depend heavily on specific individuals</div>
+        </div>
+        <div class="card-right">Every reforecast means rebuilding models from scratch, the process doesn't scale to the pace of change.</div>
+      </div>
+      <div class="uc-card" data-q="5" data-id="noprocess" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag tag-green">🚨 Severe Risk</div>
+          <div class="card-title">The ERP system amplifies dependency rather than reducing it</div>
+        </div>
+        <div class="card-right">The strategy is locked at budget-setting, a mid-year shock means going back to Cabinet with uncomfortable news.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q6 -->
+  <div class="q-block q-block-6">
+    <div class="q-number">Question 6 of 6</div>
+    <h3 class="q-title">As LGR is approaching, which area within your finance function is most vulnerable to risk?</h3>
+    <div class="card-grid" id="grid-6">
+      <div class="uc-card" data-q="6" data-id="lgr-data" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag" style="color:#E879F9;">🗂 Data & Systems Consolidation</div>
+          <div class="card-title">Fragmented data across merging councils</div>
+        </div>
+        <div class="card-right"></div>
+      </div>
+      <div class="uc-card" data-q="6" data-id="lgr-budget" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag" style="color:#E879F9;">💷 Budget Baseline & Alignment</div>
+          <div class="card-title">Aligning financial plans across legacy councils</div>
+        </div>
+        <div class="card-right"></div>
+      </div>
+      <div class="uc-card" data-q="6" data-id="lgr-workforce" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag" style="color:#E879F9;">👥 Finance Workforce Transition</div>
+          <div class="card-title">Capacity and capability gaps during restructure</div>
+        </div>
+        <div class="card-right"></div>
+      </div>
+      <div class="uc-card" data-q="6" data-id="lgr-controls" onclick="pick(this)">
+        <div class="check-badge">✓</div>
+        <div class="card-left">
+          <div class="card-tag" style="color:#E879F9;">🚫 Not Applicable</div>
+          <div class="card-title">LGR does not apply to my council</div>
+        </div>
+        <div class="card-right"></div>
+      </div>
+    </div>
+  </div>
+  </div><!-- end questions-row -->
+
+  <div class="submit-bar">
+    <div class="submit-bar-info"><span id="submit-count">0</span> of 6 questions answered</div>
+    <div style="font-size:12px;color:var(--grey);">Anonymous unless you choose to share your details</div>
+    <button class="btn-submit" id="submit-btn" onclick="proceedToCapture()">See Live Results →</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 3 — CAPTURE ══ -->
+<div class="screen" id="screen-capture">
+  <div class="top-bar">
+    <div class="tb-row2" style="border-top:none;">📍 Public Finance Live 2026 · London</div>
+  </div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:60px 40px;">
+    <div class="capture-icon">📊</div>
+    <h2 class="capture-title">Enter your details to view your personalised AI Assessment Report.</h2>
+    <p class="capture-sub">We&#x2019;ll send you the <strong>Council AI Finance Opportunity Report</strong> — your priorities benchmarked against the sector, straight to your inbox.</p>
+    <div class="capture-form">
+      <div class="form-row">
+        <input class="form-field" type="text" placeholder="First name *" id="fname">
+        <input class="form-field" type="text" placeholder="Last name *" id="lname">
+      </div>
+      <input class="form-field" type="email" placeholder="Work email address *" id="email" style="width:100%">
+      <input class="form-field optional" type="text" placeholder="Council / Organisation (optional)" id="council" style="width:100%">
+      <button class="btn-primary" style="width:100%;margin-top:8px;" onclick="validateAndSubmit()">View my report →</button>
+      <p class="capture-privacy">Your data is held securely and not shared with third parties. <a href="#">Privacy policy</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 4 — SURVEY REPORT ══ -->
+<div class="screen" id="screen-result">
+  <div class="top-bar">
+    <div class="tb-row1">
+      <div class="rp-topbar-centre">
+        <div class="report-eyebrow-inline">Your Council AI Opportunity Report</div>
+        <div class="rp-badge"><div class="rhb-dot"></div>AI-generated · Personalised</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-leaderboard" style="padding:7px 16px;font-size:12px;" onclick="showScreen('screen-leaderboard')">Leaderboard →</button>
+        <button class="btn-leaderboard" style="padding:7px 16px;font-size:12px;" onclick="downloadReportPdf()">⬇ Download PDF</button>
+        <button class="btn-primary" style="padding:7px 18px;font-size:12px;" onclick="openBooking()">Book a Session</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="report-content" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+
+  <div class="lcr-wrap" id="lcr-wrap">
+    <div class="lcr-page">
+      <div class="lcr-eyebrow">Your Diagnostic Result</div>
+      <h1 class="lcr-title">Your Customised AI Assessment Report</h1>
+      <p class="lcr-subtitle">Based on your responses · <span id="lcr-org">Your Organisation</span> · <span id="lcr-date"></span></p>
+
+      <!-- Section 1: Executive Summary -->
+      <div class="lcr-section-title">Executive Summary</div>
+      <div class="lcr-score-section" style="flex-direction:column; align-items:stretch;">
+        <div style="display:flex; align-items:center; gap:40px;">
+          <div class="lcr-dial-wrap">
+            <svg viewBox="0 0 150 150">
+              <circle class="lcr-dial-track" cx="75" cy="75" r="65"/>
+              <circle class="lcr-dial-fill" id="lcr-dial-fill" cx="75" cy="75" r="65" stroke="#C9A84C"/>
+            </svg>
+            <div class="lcr-dial-center">
+              <div class="lcr-dial-number" id="lcr-score-number">–</div>
+              <div class="lcr-dial-label">out of 100</div>
+            </div>
+          </div>
+          <div class="lcr-score-info">
+            <div class="lcr-score-band" id="lcr-score-band"><div class="lcr-score-band-dot"></div><span id="lcr-band-label">Analysing your answers…</span></div>
+            <h2 class="lcr-score-headline" id="lcr-score-headline">Putting your report together…</h2>
+            <p class="lcr-score-desc" id="lcr-score-desc">This will only take a moment.</p>
+          </div>
+        </div>
+
+        <div class="lcr-keyfindings">
+          <div class="lcr-keyfindings-label">Key findings from your responses</div>
+          <div id="lcr-keyfindings-list">
+            <div class="lcr-kf-item">Analysing your responses…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Your Top AI Opportunities -->
+      <div class="lcr-section-title">Your Top AI Opportunities</div>
+      <div class="lcr-opp-list" id="lcr-opp-list">
+        <div class="lcr-opp-card b-gold lcr-skeleton"><div class="lcr-opp-num gold">01</div><div class="lcr-opp-body"><div class="lcr-opp-title">Generating…</div></div></div>
+        <div class="lcr-opp-card b-teal lcr-skeleton"><div class="lcr-opp-num teal">02</div><div class="lcr-opp-body"><div class="lcr-opp-title">Generating…</div></div></div>
+        <div class="lcr-opp-card b-purple lcr-skeleton"><div class="lcr-opp-num purple">03</div><div class="lcr-opp-body"><div class="lcr-opp-title">Generating…</div></div></div>
+      </div>
+
+      <!-- Section 3: Your 30-Day Quick Win -->
+      <div class="lcr-section-title">Your 30-Day Quick Win</div>
+      <div class="lcr-quickwin-box" id="lcr-quickwin-box">
+        <div class="lcr-quickwin-icon">⚡</div>
+        <div>
+          <div class="lcr-quickwin-label">Act on this within 30 days</div>
+          <div class="lcr-quickwin-title" id="lcr-quickwin-title">Generating…</div>
+          <div class="lcr-quickwin-desc" id="lcr-quickwin-desc"></div>
+        </div>
+      </div>
+
+      <!-- Section 4: Next Step -->
+      <div class="lcr-section-title">Next Step</div>
+      <div class="lcr-next-step">
+        <button class="lcr-btn-report" onclick="emailMyReport()">Email my customised AI Assessment Report →</button>
+      </div>
+
+      <div class="lcr-footer">
+        <div>Council AI Finance Opportunity Diagnostic · Public Finance Live 2026</div>
+        <div>© 2026 · Confidential</div>
+      </div>
+    </div>
+  </div>
+  </div><!-- end report-content -->
+</div>
+
+<!-- Thank-you modal shown after "Email my customised AI Assessment Report" -->
+<div class="lcr-modal-overlay" id="lcr-modal-overlay">
+  <div class="lcr-modal-card">
+    <div class="lcr-modal-icon">✅</div>
+    <div class="lcr-modal-title">Thank you</div>
+    <div class="lcr-modal-desc">Your personalised AI Assessment Report has been emailed to <strong id="lcr-modal-email">your inbox</strong>. Please check your inbox (and spam folder) shortly. One of our experts will also be in touch to discuss how AI can help address your organisation&#x2019;s priorities.</div>
+    <button class="lcr-modal-close" onclick="closeLcrModal()">Close</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 5 — LEADERBOARD ══ -->
+<div class="screen" id="screen-leaderboard">
+  <div class="top-bar">
+    <div class="tb-row1">
+      <div class="logo-area"><div class="logo-dot">AI</div><div class="logo-text">Council AI Finance Pulse 2026</div></div>
+      <div class="voter-count"><span id="lb-count">184</span> finance leaders voted</div>
+    </div>
+    <div class="tb-row2">📍 Public Finance Live 2026 · London</div>
+  </div>
+  <div class="lb-body">
+    <div class="lb-header">
+      <div>
+        <h2 class="lb-title">What the sector wants<br>from <em>AI in finance</em></h2>
+        <p class="lb-subtitle">Public Finance Live 2026 · Real-time priority index · Updated as votes are cast</p>
+      </div>
+      <div class="live-badge"><div class="live-dot"></div> Live</div>
+    </div>
+    <div class="lb-list" id="lb-list"></div>
+  </div>
+  <div class="lb-footer">
+    <div class="lb-footer-stat">Most voted category: <span id="lb-top-cat">—</span></div>
+    <div class="lb-footer-stat">Total responses: <span id="lb-total">—</span></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-secondary" style="padding:8px 18px;font-size:12px;" onclick="showScreen('screen-welcome')">Vote Again</button>
+      <button class="btn-primary" style="padding:8px 18px;font-size:13px;" onclick="goToFullReport()">Get Full Report</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const answers = {};
+  let capturedLead = null;   // { firstName, lastName, email, organisation } - set once the capture form is submitted
+  let currentReport = null; // latest rendered report object, used when emailing the report
+  const usecaseData = {
+    fraud:       { name:'Fraud & Payment Integrity',              cat:'AI Priority',         q:1, fill:'fill-gold',   catCls:'tag-gold',   votes:52 },
+    demand:      { name:'Demand-Led Cost Forecasting',            cat:'AI Priority',         q:1, fill:'fill-gold',   catCls:'tag-gold',   votes:41 },
+    reporting:   { name:'Automated Month-End & Variance',         cat:'AI Priority',         q:1, fill:'fill-gold',   catCls:'tag-gold',   votes:29 },
+    mtfs:        { name:'Grant & Funding Compliance',                cat:'AI Priority',         q:1, fill:'fill-gold',   catCls:'tag-gold',   votes:35 },
+    early:       { name:'Early Warning — Before Threshold',       cat:'Budget Visibility',   q:2, fill:'fill-coral',  catCls:'tag-coral',  votes:28 },
+    monthend:    { name:'At Month-End Monitoring',                cat:'Budget Visibility',   q:2, fill:'fill-coral',  catCls:'tag-coral',  votes:47 },
+    informal:    { name:'When the Service Tells Us',              cat:'Budget Visibility',   q:2, fill:'fill-coral',  catCls:'tag-coral',  votes:38 },
+    crisis:      { name:'Only When It\'s Already a Crisis',       cat:'Budget Visibility',   q:2, fill:'fill-coral',  catCls:'tag-coral',  votes:22 },
+    close:       { name:'Statutory Accounts Assurance',           cat:'S151 Risk',           q:3, fill:'fill-teal',   catCls:'tag-teal',   votes:55 },
+    overspend:   { name:'Budget Monitoring & Variance Control',   cat:'S151 Risk',           q:3, fill:'fill-teal',   catCls:'tag-teal',   votes:47 },
+    payintegrity:{ name:'Payment Integrity & Counter-Fraud',      cat:'S151 Risk',           q:3, fill:'fill-teal',   catCls:'tag-teal',   votes:22 },
+    reserves:    { name:'Reserves Sustainability',                cat:'S151 Risk',           q:3, fill:'fill-teal',   catCls:'tag-teal',   votes:31 },
+    periodclose: { name:'Period Close & Reporting Efficiency',    cat:'Team Capacity',       q:4, fill:'fill-purple', catCls:'tag-purple', votes:49 },
+    partnering:  { name:'Finance Business Partnering Support',    cat:'Team Capacity',       q:4, fill:'fill-purple', catCls:'tag-purple', votes:35 },
+    forecasting: { name:'Demand & Cost Forecasting',              cat:'Team Capacity',       q:4, fill:'fill-purple', catCls:'tag-purple', votes:27 },
+    insights:    { name:'Data & Management Insights',              cat:'Team Capacity',       q:4, fill:'fill-purple', catCls:'tag-purple', votes:21 },
+    sameday:     { name:'Minimal Risk — Automated Processes',         cat:'ERP Resilience',        q:5, fill:'fill-green',  catCls:'tag-green',  votes:18 },
+    week:        { name:'Moderate Risk — Some Person Dependency',             cat:'ERP Resilience',        q:5, fill:'fill-green',  catCls:'tag-green',  votes:44 },
+    weeks:       { name:'Significant Risk — Key Person Dependency',           cat:'ERP Resilience',        q:5, fill:'fill-green',  catCls:'tag-green',  votes:39 },
+    noprocess:   { name:'Severe Risk — ERP Amplifies Dependency',               cat:'ERP Resilience',        q:5, fill:'fill-green',  catCls:'tag-green',  votes:14 },
+    systems:     { name:'Merging Incompatible Finance Systems',   cat:'LGR Readiness',       q:6, fill:'fill-purple', catCls:'tag-purple', votes:43 },
+    people:      { name:'Retaining Institutional Knowledge',      cat:'LGR Readiness',       q:6, fill:'fill-purple', catCls:'tag-purple', votes:37 },
+    liabilities: { name:'Inheriting Financial Liabilities',       cat:'LGR Readiness',       q:6, fill:'fill-purple', catCls:'tag-purple', votes:29 },
+    uncertainty: { name:'LGR Uncertainty — Can\'t Plan Yet',      cat:'LGR Readiness',       q:6, fill:'fill-purple', catCls:'tag-purple', votes:22 },
+    'lgr-data':     { name:'Data & Systems Consolidation',       cat:'LGR Risk', q:6, fill:'fill-pink',   catCls:'tag-pink',   votes:28 },
+    'lgr-budget':   { name:'Budget Baseline & Alignment',           cat:'LGR Risk', q:6, fill:'fill-pink',   catCls:'tag-pink',   votes:22 },
+    'lgr-workforce':{ name:'Finance Workforce Transition',           cat:'LGR Risk', q:6, fill:'fill-pink',   catCls:'tag-pink',   votes:18 },
+    'lgr-controls': { name:'Financial Controls & Compliance',        cat:'LGR Risk', q:6, fill:'fill-pink',   catCls:'tag-pink',   votes:15 },
+  };
+
+  const qColors  = {1:'sel-1',2:'sel-2',3:'sel-3',4:'sel-4',5:'sel-5',6:'sel-6'};
+  const qLabels  = {1:'🤖 AI Priority',2:'📊 Budget Visibility',3:'🛡 S151 Risk',4:'⏱ Team Capacity',5:'📈 MTFS Agility',6:'🏛 LGR Readiness'};
+  const qLabelCols = {1:'var(--gold)',2:'var(--coral-light)',3:'var(--teal-light)',4:'var(--purple-light)',5:'var(--green)',6:'var(--purple-light)'};
+
+  function pick(el) {
+    const q  = parseInt(el.dataset.q);
+    const selCls = qColors[q];
+    document.querySelectorAll(`#grid-${q} .uc-card`).forEach(c => c.classList.remove('sel-1','sel-2','sel-3','sel-4','sel-5','sel-6'));
+    el.classList.add(selCls);
+    answers[q] = el.dataset.id;
+    const count = Object.keys(answers).length;
+    document.getElementById('answered-count').textContent = count;
+    document.getElementById('submit-count').textContent   = count;
+    for (let i=1;i<=6;i++) document.getElementById('dot-'+i).classList.toggle('done',!!answers[i]);
+    document.getElementById('submit-btn').classList.toggle('enabled', count >= 6);
+  }
+
+  let leadCaptured = false;
+
+  function isValidEmail(email) {
+    // Standard, deliberately-not-overly-strict email shape check
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  // Generic/free email providers are not accepted - we want a company/work email.
+  const BLOCKED_EMAIL_DOMAINS = [
+    'gmail.com', 'googlemail.com', 'yahoo.com', 'yahoo.co.uk', 'ymail.com',
+    'outlook.com', 'hotmail.com', 'hotmail.co.uk', 'live.com', 'msn.com',
+    'icloud.com', 'me.com', 'mac.com', 'aol.com', 'aim.com',
+    'protonmail.com', 'proton.me', 'gmx.com', 'gmx.co.uk', 'mail.com',
+    'zoho.com', 'yandex.com', 'inbox.com', 'fastmail.com',
+  ];
+
+  function isCompanyEmail(email) {
+    const domain = email.split('@')[1]?.toLowerCase().trim();
+    return !!domain && !BLOCKED_EMAIL_DOMAINS.includes(domain);
+  }
+
+  function showCaptureError(message) {
+    let err = document.getElementById('capture-error');
+    if (!err) {
+      err = document.createElement('div');
+      err.id = 'capture-error';
+      err.style.cssText = 'color:#ff8a80;font-size:12.5px;margin:-2px 0 10px;text-align:center;';
+      document.querySelector('.capture-form').insertBefore(err, document.querySelector('.btn-primary'));
+    }
+    err.textContent = message;
+    err.style.display = 'block';
+  }
+
+  function clearCaptureError() {
+    const err = document.getElementById('capture-error');
+    if (err) err.style.display = 'none';
+    ['fname', 'lname', 'email'].forEach(id => {
+      document.getElementById(id).style.borderColor = '';
+    });
+  }
+
+  function validateAndSubmit() {
+    clearCaptureError();
+
+    const fname   = document.getElementById('fname').value.trim();
+    const lname   = document.getElementById('lname').value.trim();
+    const email   = document.getElementById('email').value.trim();
+    const council = document.getElementById('council').value.trim();
+
+    let firstBadField = null;
+    let emailErrorMsg = '';
+    if (!fname) { document.getElementById('fname').style.borderColor = '#ff8a80'; firstBadField = firstBadField || 'fname'; }
+    if (!lname) { document.getElementById('lname').style.borderColor = '#ff8a80'; firstBadField = firstBadField || 'lname'; }
+    if (!email || !isValidEmail(email)) {
+      document.getElementById('email').style.borderColor = '#ff8a80';
+      firstBadField = firstBadField || 'email';
+      emailErrorMsg = 'Please enter a valid work email address.';
+    } else if (!isCompanyEmail(email)) {
+      document.getElementById('email').style.borderColor = '#ff8a80';
+      firstBadField = firstBadField || 'email';
+      emailErrorMsg = 'Please use your company/work email address, not a personal one (e.g. Gmail, Yahoo, Outlook).';
+    }
+
+    if (firstBadField) {
+      showCaptureError(emailErrorMsg || 'Please fill in your first and last name.');
+      document.getElementById(firstBadField).focus();
+      return;
+    }
+
+    leadCaptured = true;
+    capturedLead = { firstName: fname, lastName: lname, email, organisation: council };
+
+    const orgEl = document.getElementById('lcr-org');
+    if (orgEl) orgEl.textContent = council || 'Your Organisation';
+    const profileOrgEl = document.getElementById('lcr-profile-org');
+    if (profileOrgEl) profileOrgEl.textContent = council || 'Your Organisation';
+
+    fetch('/api/save-lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: fname,
+        lastName: lname,
+        email: email,
+        organisation: council,
+        answers: [1,2,3,4,5,6].map(q => answers[q] && usecaseData[answers[q]] ? usecaseData[answers[q]].name : ''),
+      }),
+    }).catch(err => console.error('Lead save failed:', err));
+
+    submitAndShow();
+  }
+
+  function proceedToCapture() {
+    // Fire the report request the instant the assessment is submitted,
+    // not after the capture form - so it's generating in the background
+    // while they type their name/email instead of making them wait on
+    // the report screen.
+    showScreen('screen-capture');
+    generateReport();
+  }
+
+  function submitAndShow() {
+    Object.values(answers).forEach(id => { if(usecaseData[id]) usecaseData[id].votes++; });
+
+    buildLeaderboard();
+    showScreen('screen-result');
+    generateReport();
+  }
+
+  function goToFullReport() {
+    showScreen('screen-result');
+  }
+
+  function openBooking() {
+    // Opens in a new tab so they don't lose their place on the report/leaderboard.
+    window.open('/book-session.html', '_blank');
+  }
+
+  function scoreStyle(score) {
+    if (score >= 80) return { stroke:'#00B4B4', bandBg:'#E0F7F7', bandColor:'#007A7A', bandBorder:'#A0DEDE', dotColor:'#00B4B4' };
+    if (score >= 45) return { stroke:'#C9A84C', bandBg:'#E8F5EE', bandColor:'#1A7A45', bandBorder:'#B8DFC9', dotColor:'#2ECC71' };
+    return { stroke:'#E8524A', bandBg:'#FDECEA', bandColor:'#B91C1C', bandBorder:'#F5C5C2', dotColor:'#E8524A' };
+  }
+
+  function renderLcrScore(r) {
+    const score = Math.max(0, Math.min(100, Math.round(r.score || 0)));
+    const style = scoreStyle(score);
+
+    document.getElementById('lcr-score-number').textContent = score;
+
+    const fill = document.getElementById('lcr-dial-fill');
+    fill.style.stroke = style.stroke;
+    const circumference = 2 * Math.PI * 65;
+    const offset = circumference - (score / 100) * circumference;
+    requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.strokeDashoffset = offset; }));
+
+    const bandEl = document.getElementById('lcr-score-band');
+    bandEl.style.background = style.bandBg;
+    bandEl.style.color = style.bandColor;
+    bandEl.style.borderColor = style.bandBorder;
+    bandEl.querySelector('.lcr-score-band-dot').style.background = style.dotColor;
+
+    document.getElementById('lcr-band-label').textContent = r.band || '';
+    document.getElementById('lcr-score-headline').textContent = r.headline || '';
+    document.getElementById('lcr-score-desc').textContent = r.desc || '';
+  }
+
+  function renderLcrOpportunities(list) {
+    if (!Array.isArray(list) || !list.length) return;
+    const borderCls = ['b-gold', 'b-teal', 'b-purple'];
+    const numCls    = ['gold', 'teal', 'purple'];
+    const numLabel  = ['01', '02', '03'];
+
+    document.getElementById('lcr-opp-list').innerHTML = list.slice(0, 3).map((o, i) => `
+      <div class="lcr-opp-card ${borderCls[i] || 'b-gold'}">
+        <div class="lcr-opp-num ${numCls[i] || 'gold'}">${numLabel[i] || (i + 1)}</div>
+        <div class="lcr-opp-body">
+          <div class="lcr-opp-title">${o.title || ''}</div>
+          <div class="lcr-opp-desc">${o.desc || ''}</div>
+          ${o.tag ? `<span class="lcr-opp-tag">${o.tag}</span>` : ''}
+        </div>
+      </div>`).join('');
+  }
+
+  function renderLcrQuickwin(q) {
+    if (!q) return;
+    document.getElementById('lcr-quickwin-title').textContent = q.title || '';
+    document.getElementById('lcr-quickwin-desc').textContent = q.desc || '';
+  }
+
+  function renderLcrKeyFindings(list) {
+    if (!Array.isArray(list) || !list.length) return;
+    const borderCls = ['', 'b-teal', 'b-purple', 'b-pink'];
+    document.getElementById('lcr-keyfindings-list').innerHTML = list.slice(0, 4).map((item, i) => `
+      <div class="lcr-kf-item ${borderCls[i] || ''}">
+        <span>${item.icon || ''}</span><span>${item.text || ''}</span>
+      </div>`).join('');
+  }
+
+  // "Email my customised AI Assessment Report" CTA - actually sends the
+  // report to the address captured on the capture screen, then shows the
+  // thank-you modal once the email has genuinely gone out.
+  function emailMyReport() {
+    const btn = document.querySelector('.lcr-btn-report');
+    if (!capturedLead || !capturedLead.email) {
+      alert('Please enter your details first.');
+      return;
+    }
+
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    fetch('/api/email-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: capturedLead.firstName,
+        lastName: capturedLead.lastName,
+        email: capturedLead.email,
+        organisation: capturedLead.organisation,
+        report: currentReport,
+      }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        const emailEl = document.getElementById('lcr-modal-email');
+        if (emailEl) emailEl.textContent = capturedLead.email;
+        document.getElementById('lcr-modal-overlay').classList.add('active');
+      })
+      .catch(err => {
+        console.error('Emailing report failed:', err);
+        alert("We couldn't send your report right now - please try again in a moment.");
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      });
+  }
+  function closeLcrModal() {
+    document.getElementById('lcr-modal-overlay').classList.remove('active');
+  }
+
+  function downloadReportPdf() {
+    // Temporarily blank the page title so the browser's own print
+    // header (which normally prints the <title> top-right) doesn't
+    // show it on the PDF - restored right after the print dialog closes.
+    const originalTitle = document.title;
+    document.title = '';
+    window.print();
+    setTimeout(() => { document.title = originalTitle; }, 0);
+  }
+
+  // ============================================
+  // ANSWER-DRIVEN ANALYSIS ENGINE
+  // Every score, table, and paragraph in the report below is derived from
+  // the specific answers this person picked - nothing here is a fixed
+  // number. Each answer id maps to a capability dimension + a 0-100
+  // maturity/readiness contribution, plus tailored interpretation/impact/
+  // recommendation text used across every section of the report.
+  // ============================================
+  const questionText = {
+    1: 'If AI in local government finance delivered optimisation, where would you want it first?',
+    2: 'When a service overspend hits, how early does your system tell you?',
+    3: 'What keeps your Section 151 Officer up at night?',
+    4: 'If your finance function had greater capacity, where would you want it to create the greatest value for your organisation?',
+    5: 'How resilient is your finance function if key finance expertise disappears overnight?',
+    6: 'As LGR is approaching, which area within your finance function is most vulnerable to risk?'
+  };
+
+  const capLabels = { financialPlanning:'Financial Planning', budgetMonitoring:'Budget Monitoring', automation:'Automation', reporting:'Reporting', fraud:'Fraud & Assurance', lgrReadiness:'LGR Readiness' };
+
+  // dim: which capability this answer's score feeds. score: 0-100 current
+  // maturity implied by picking this option (lower = bigger AI opportunity).
+  const answerProfile = {
+    fraud:        { dim:'priority', score:null, title:'AI Payment Integrity Screening', read:'You want AI applied to fraud and payment integrity first — signalling counter-fraud and assurance as your leading concern.', impact:'Without automated anomaly detection, fraudulent or duplicate payments can go undetected until an audit or review flags them.', action:'Deploy AI-powered payment integrity screening across your finance transaction flow to catch anomalies before payment release.' },
+    demand:       { dim:'priority', score:null, title:'Predictive Demand-Led Forecasting', read:'Demand-led cost forecasting is your top priority — you\'re focused on getting ahead of rising service pressures like care and housing.', impact:'Without predictive forecasting, budget pressure in demand-led services is usually spotted only once costs have already escalated.', action:'Introduce AI-driven demand forecasting models that flag cost pressure 6-12 months ahead of committee reporting cycles.' },
+    reporting:    { dim:'priority', score:null, title:'Automated Month-End Reporting', read:'Automated month-end and variance reporting is your top priority — the manual reporting burden is clearly front of mind.', impact:'Manual variance narratives slow period close and pull qualified finance staff away from higher-value analysis.', action:'Use generative AI to draft variance commentary and committee reports directly from your finance system data.' },
+    mtfs:         { dim:'priority', score:null, title:'AI Grant Compliance Tracking', read:'Grant and funding compliance is your top priority — tracking conditions and reporting obligations is a growing burden.', impact:'Manual grant tracking increases the risk of missed conditions, clawback, or compliance breaches as funding streams multiply.', action:'Apply AI to automatically track grant conditions, deadlines and reporting obligations across all funding streams.' },
+
+    early:        { dim:'budgetMonitoring', score:88, title:'Predictive Variance Alerts', read:'Your systems already flag overspends early, before they escalate — a strong sign of budget monitoring maturity.', impact:'This proactive posture reduces in-year corrective pressure, but manual checks still limit how far ahead you can see.', action:'Layer AI-driven predictive variance alerts on top of your existing early-warning process to extend the lead time further.' },
+    monthend:     { dim:'budgetMonitoring', score:58, title:'Continuous Budget Monitoring', read:'Overspends are typically identified at month-end — a standard but reactive monitoring cadence.', impact:'Issues are usually visible only after the window for the cheapest corrective action has already closed.', action:'Introduce continuous AI-powered budget monitoring to surface overspend trends weeks before month-end close.' },
+    informal:     { dim:'budgetMonitoring', score:36, title:'Real-Time Ledger Monitoring', read:'Overspends are often first flagged informally by services rather than through the finance system itself.', impact:'Relying on services to self-report creates blind spots and inconsistent visibility across directorates.', action:'Deploy AI monitoring directly against your finance system ledgers so overspend signals don\'t depend on informal escalation.' },
+    crisis:       { dim:'budgetMonitoring', score:16, title:'Foundational Budget Monitoring', read:'Overspends are typically only visible once they\'re already a crisis — the most reactive position on budget monitoring.', impact:'This significantly narrows the window for corrective action and increases the risk of in-year budget failures.', action:'Prioritise AI-powered continuous budget monitoring as a foundational step before pursuing other automation.' },
+
+    close:        { dim:'fraud', score:60, title:'Continuous Statutory Assurance', read:'Statutory accounts assurance is what keeps your S151 Officer up at night — audit and year-end certainty is the priority.', impact:'Manual assurance processes around statutory accounts increase the risk of late certification and audit findings.', action:'Use AI to continuously validate ledger data against statutory requirements, reducing year-end assurance effort.' },
+    overspend:    { dim:'fraud', score:50, title:'Real-Time Variance Control', read:'Budget monitoring and variance control is the top S151 concern — visibility into in-year spend is the priority.', impact:'Without earlier visibility, in-year overspends can escalate before corrective action is possible.', action:'Implement AI-powered variance control that flags directorate overspend risk in real time, not just at period end.' },
+    payintegrity: { dim:'fraud', score:38, title:'AI Payment Anomaly Detection', read:'Payment integrity and counter-fraud is the top S151 concern — protecting against fraudulent or erroneous payment is front of mind.', impact:'Manual payment checks struggle to keep pace with transaction volume, leaving gaps that fraud can exploit.', action:'Deploy AI anomaly detection across payment runs to flag duplicate, fraudulent or erroneous transactions automatically.' },
+    reserves:     { dim:'fraud', score:62, title:'Reserves Scenario Modelling', read:'Reserves sustainability is the top S151 concern — long-term financial resilience is the priority.', impact:'Without forward-looking modelling, reserve drawdown risk is often identified too late to adjust the MTFS.', action:'Use AI-powered scenario modelling to stress-test reserves sustainability against multiple MTFS scenarios.' },
+
+    periodclose:  { dim:'automation', score:35, title:'Automated Period Close', read:'Period close and reporting is where your team would most value an hour back — manual effort here is significant.', impact:'Time spent on manual period close reduces capacity for forecasting, business partnering and strategic finance work.', action:'Automate period close reporting and variance narratives with AI to free up finance capacity for higher-value work.' },
+    partnering:   { dim:'automation', score:55, title:'AI-Freed Business Partnering', read:'Finance business partnering is where your team would most value an hour back — strategic support to services is being squeezed.', impact:'When transactional work crowds out business partnering, services lose access to timely financial insight and support.', action:'Free up business partnering time by automating routine reporting and transactional finance tasks with AI.' },
+    forecasting:  { dim:'automation', score:40, title:'Predictive Demand & Cost Forecasting', read:'Demand and cost forecasting is where your team would create the greatest value with more capacity — getting ahead of service pressure is the priority.', impact:'Without predictive forecasting, demand-led cost pressure in services like care and housing is usually spotted only once it has already hit the budget.', action:'Introduce AI-driven demand and cost forecasting that flags service pressure months before it impacts the budget.' },
+    insights:     { dim:'automation', score:45, title:'AI-Powered Management Insights', read:'Turning finance data into faster, better-informed decisions is where your team would create the greatest value with more capacity.', impact:'When finance data stays locked in spreadsheets and static reports, leadership decisions are slower and less informed than they could be.', action:'Use AI to surface trends and insights directly from your finance data, turning raw numbers into decisions leadership can act on.' },
+
+    sameday:      { dim:'reporting', score:90, title:'Process Documentation & Monitoring', read:'Your finance function shows minimal key-person risk — processes are largely automated and resilient.', impact:'This is a strong foundation, though undocumented pockets of manual process can still create hidden dependency.', action:'Use AI to document and monitor remaining manual processes so resilience keeps pace as systems evolve.' },
+    week:         { dim:'reporting', score:60, title:'AI Finance Copilot', read:'Your finance function shows moderate key-person dependency — some processes rely on specific individuals.', impact:'A short absence is manageable, but extended leave or departure could disrupt core finance operations.', action:'Introduce an AI finance copilot to capture institutional knowledge and reduce dependency on specific individuals.' },
+    weeks:        { dim:'reporting', score:35, title:'Knowledge Capture & Automation', read:'Your finance function shows significant key-person dependency — core processes rely heavily on a small number of people.', impact:'The departure of key staff could meaningfully disrupt reporting, payments or budget monitoring for weeks.', action:'Prioritise an AI knowledge-capture and process-automation programme to reduce reliance on individual expertise.' },
+    noprocess:    { dim:'reporting', score:15, title:'Urgent Process Automation', read:'Your ERP appears to amplify key-person dependency rather than reduce it — a severe resilience risk.', impact:'Without documented, automated processes, expertise loss could cause a serious operational disruption.', action:'Treat process documentation and AI-assisted automation as an urgent priority to de-risk single points of failure.' },
+
+    systems:        { dim:'lgrReadiness', score:40, title:'Systems Data Consolidation', read:'Merging incompatible finance systems is your most vulnerable area as LGR approaches.', impact:'Fragmented systems across merging councils create data quality risk and slow down consolidated reporting.', action:'Use AI to accelerate data consolidation and provide a single source of truth across merging systems.' },
+    people:         { dim:'lgrReadiness', score:50, title:'Institutional Knowledge Capture', read:'Retaining institutional knowledge is your most vulnerable area as LGR approaches.', impact:'LGR transitions often see experienced staff leave, taking undocumented process knowledge with them.', action:'Deploy an AI finance copilot to capture and preserve institutional knowledge ahead of LGR transition.' },
+    liabilities:    { dim:'lgrReadiness', score:45, title:'Liability Identification & Analysis', read:'Inheriting financial liabilities is your most vulnerable area as LGR approaches.', impact:'Undisclosed or poorly understood liabilities can create significant financial risk for the new authority.', action:'Use AI-powered financial analysis to identify and quantify inherited liabilities before LGR completion.' },
+    uncertainty:    { dim:'lgrReadiness', score:25, title:'No-Regrets AI Readiness', read:'LGR uncertainty means you can\'t yet plan in detail — timing and structure are still unclear.', impact:'Delaying preparation until LGR details are confirmed risks a compressed, high-pressure transition window.', action:'Start a no-regrets AI readiness programme now so your finance function is prepared whenever LGR is confirmed.' },
+    'lgr-data':     { dim:'lgrReadiness', score:40, title:'AI Data Consolidation', read:'Data and systems consolidation is your biggest LGR risk area.', impact:'Merging incompatible data structures under time pressure increases the risk of reporting errors during transition.', action:'Use AI-assisted data mapping and consolidation to bring merging systems onto a single source of truth faster.' },
+    'lgr-budget':   { dim:'lgrReadiness', score:50, title:'Budget Baseline Alignment', read:'Budget baseline and alignment is your biggest LGR risk area.', impact:'Misaligned budget baselines across merging authorities can distort the new organisation\'s opening financial position.', action:'Apply AI-powered budget analysis to reconcile and align baselines across merging authorities ahead of vesting day.' },
+    'lgr-workforce':{ dim:'lgrReadiness', score:45, title:'Workforce Knowledge Continuity', read:'Finance workforce transition is your biggest LGR risk area.', impact:'Workforce uncertainty during LGR can lead to knowledge loss just as continuity matters most.', action:'Use an AI finance copilot to preserve process knowledge through workforce transition and onboarding.' },
+    'lgr-controls': { dim:'lgrReadiness', score:55, title:'Controls Monitoring Automation', read:'Financial controls and compliance is your biggest LGR risk area.', impact:'Control frameworks can weaken during large-scale reorganisation, increasing the risk of compliance gaps.', action:'Deploy AI-powered controls monitoring to maintain compliance assurance throughout the LGR transition.' },
+  };
+
+  function maturityLabel(score) {
+    if (score >= 75) return { text:'Strong', cls:'lcr-tag-strong' };
+    if (score >= 55) return { text:'Moderate', cls:'lcr-tag-moderate' };
+    if (score >= 35) return { text:'Developing', cls:'lcr-tag-developing' };
+    return { text:'Emerging', cls:'lcr-tag-emerging' };
+  }
+  function bandLabel(score) {
+    if (score >= 80) return 'AI Ready';
+    if (score >= 60) return 'Strong Opportunity';
+    if (score >= 40) return 'Developing';
+    return 'Early Stage';
+  }
+  function riskLevel(riskScore) {
+    if (riskScore >= 70) return { text:'Critical', cls:'lcr-tag-critical' };
+    if (riskScore >= 50) return { text:'High', cls:'lcr-tag-high' };
+    if (riskScore >= 30) return { text:'Medium', cls:'lcr-tag-medium' };
+    return { text:'Low', cls:'lcr-tag-low' };
+  }
+
+  // Walks the person's 6 actual answers and turns them into every score
+  // and content block the report needs. Nothing here is fixed - change
+  // the answers and every number and sentence below changes with them.
+  function computeAnalysis() {
+    const entries = [];
+    const dims = {};
+    [1,2,3,4,5,6].forEach(q => {
+      const id = answers[q];
+      if (!id || !usecaseData[id] || !answerProfile[id]) return;
+      const base = usecaseData[id];
+      const profile = answerProfile[id];
+      entries.push({ q, id, name: base.name, cat: base.cat, ...profile });
+      if (profile.dim && profile.dim !== 'priority' && profile.score != null) {
+        dims[profile.dim] = profile.score;
+      }
+    });
+
+    const budgetMonitoring = dims.budgetMonitoring ?? 50;
+    const fraud            = dims.fraud ?? 50;
+    const automation       = dims.automation ?? 50;
+    const reporting        = dims.reporting ?? 50;
+    const lgrReadiness     = dims.lgrReadiness ?? 50;
+    const financialPlanning = Math.round(budgetMonitoring*0.5 + reporting*0.3 + automation*0.2);
+
+    const capabilities = { financialPlanning, budgetMonitoring, automation, reporting, fraud, lgrReadiness };
+    const overall = Math.round(budgetMonitoring*0.20 + automation*0.25 + reporting*0.20 + fraud*0.15 + lgrReadiness*0.10 + financialPlanning*0.10);
+    const riskExposure = Math.max(0, Math.min(100, Math.round(100 - (budgetMonitoring*0.4 + fraud*0.35 + reporting*0.25))));
+    const automationPotential = 100 - automation;
+
+    return { entries, capabilities, overall, riskExposure, automationPotential, lgrReadinessScore: lgrReadiness };
+  }
+
+  function iconForCat(cat) {
+    const map = { 'AI Priority':'🤖', 'Budget Visibility':'📊', 'S151 Risk':'🛡', 'Team Capacity':'⏱', 'ERP Resilience':'📈', 'LGR Readiness':'🏛', 'LGR Risk':'🏛' };
+    return map[cat] || '🔎';
+  }
+
+  // Builds every text/number block for the report from computeAnalysis(),
+  // used both as the primary render path and as the fallback if the
+  // Azure enhancement call is unavailable or fails.
+  function buildDeterministicReport(analysis) {
+    const { entries, capabilities, overall, riskExposure, automationPotential, lgrReadinessScore } = analysis;
+    const capEntries = Object.entries(capabilities).sort((a,b)=>b[1]-a[1]);
+    const best = capEntries[0], worst = capEntries[capEntries.length-1];
+    const band = bandLabel(overall);
+
+    const headline = `Your responses point to a "${band}" profile for AI adoption.`;
+    const desc = `${capLabels[best[0]]} is your strongest area (${best[1]}/100), while ${capLabels[worst[0]]} shows the greatest AI opportunity (${worst[1]}/100) — that's the fastest place to see returns.`;
+
+    const byQ = q => entries.find(e => e.q === q);
+    const execSourceQs = [1,2,4,6].filter(q => byQ(q));
+    const executiveSummary = execSourceQs.map(q => { const e = byQ(q); return { icon: iconForCat(e.cat), text: e.read }; });
+
+    // Q2/Q4/Q5 = operational efficiency opportunities. Q1/Q3/Q6 = strategic game-changers.
+    const oppQs = [2,4,5].filter(q => byQ(q));
+    const gcQs  = [1,3,6].filter(q => byQ(q));
+    const opportunities = oppQs.map(q => { const e = byQ(q); return { title:e.title, desc:e.action, tag:capLabels[e.dim] || e.cat }; });
+    const gameChangers  = gcQs.map(q => { const e = byQ(q); return { title:e.title, desc:e.action, tag:e.cat }; });
+
+    const scoredEntries = entries.filter(e => e.score != null).sort((a,b)=>a.score-b.score);
+    const quickwinSrc = scoredEntries[0] || entries[0];
+    const quickwin = quickwinSrc ? { title: quickwinSrc.title, desc: quickwinSrc.action } : null;
+
+    return { score:overall, automationPotential, riskExposure, lgrReadinessScore, band, headline, desc, executiveSummary, opportunities, gameChangers, quickwin };
+  }
+
+  let reportRequested = false;
+
+  function generateReport() {
+    if (reportRequested) return; // avoid firing twice - once from proceedToCapture(), once from submitAndShow()
+    reportRequested = true;
+
+    document.getElementById('lcr-date').textContent = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    // Every score in the report is computed from the actual answers up
+    // front - this always renders correctly, with or without the network.
+    const analysis = computeAnalysis();
+    const deterministic = buildDeterministicReport(analysis);
+    currentReport = deterministic;
+
+    renderLcrScore(deterministic);
+    renderLcrOpportunities(deterministic.opportunities);
+    renderLcrQuickwin(deterministic.quickwin);
+    renderLcrKeyFindings(deterministic.executiveSummary);
+
+    // Optional enhancement: if Azure OpenAI is configured, swap in richer
+    // AI-generated prose for the headline/summary/opportunities - but the
+    // underlying scores always stay the ones computed from the answers
+    // above, so numbers are never generic or fixed.
+    const userAnswers = [1,2,3,4,5,6].map(q => {
+      const d = answers[q] ? usecaseData[answers[q]] : null;
+      return d ? `Q${q} (${qLabels[q]}): ${d.name}` : `Q${q}: Not answered`;
+    }).join('\n');
+
+    const prompt = `You are an AI consultant for UK local government finance. A finance leader completed a survey at CIPFA Public Finance Live 2026. Their answers:\n\n${userAnswers}\n\nTheir computed AI Readiness score is ${analysis.overall}/100. Return ONLY valid JSON, no preamble or markdown. Use this exact structure:\n{\n  "headline": "One sentence, max 16 words, on their overall AI readiness, consistent with a score of ${analysis.overall}/100.",\n  "desc": "2-3 sentences, max 45 words, explaining the score in context of their specific answers.",\n  "executiveSummary": [\n    {"icon": "one relevant emoji", "text": "One sentence, max 30 words, reflecting on one of their specific answers and its implication."}\n  ],\n  "opportunities": [\n    {"title": "4-6 word opportunity name", "desc": "One or two sentences, max 35 words, on how AI closes a business gap, cuts cost or saves time based on their answers.", "tag": "2-3 word impact tag"}\n  ],\n  "gameChangers": [\n    {"title": "4-6 word strategic/transformational AI opportunity name, distinct from the 'opportunities' items", "desc": "One or two sentences, max 35 words, on the strategic or transformational impact.", "tag": "2-3 word impact tag, e.g. 'Strategic Foresight', 'Governance', 'LGR Readiness'"}\n  ],\n  "quickwin": {\n    "title": "One sentence, max 16 words, describing a concrete action they can take within 30 days.",\n    "desc": "One or two sentences, max 35 words, on the impact of taking this quick win."\n  }\n}\nInclude exactly 4 items in "executiveSummary", each tied to a different one of their 6 answers. Include exactly 3 items in "opportunities" and exactly 3 in "gameChangers" - all genuinely differentiated and specific to their answers, not generic defaults. Be specific to UK local government and technology-agnostic - do not name any specific ERP, finance system or software vendor. Mention S151, MTFS, LGR where natural. Do NOT include a numeric score field - the score is already fixed at ${analysis.overall}.`;
+
+    fetch('/api/generate-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      let raw = (data.content||[]).map(b=>b.text||'').join('');
+      raw = raw.replace(/```json|```/g,'').trim();
+      const r = JSON.parse(raw);
+      // Scores always come from the deterministic engine - only the prose is enhanced.
+      r.score = analysis.overall;
+      r.band = deterministic.band;
+      currentReport = r;
+
+      renderLcrScore(r);
+      renderLcrOpportunities(r.opportunities);
+      renderLcrQuickwin(r.quickwin || deterministic.quickwin);
+      renderLcrKeyFindings(r.executiveSummary);
+    })
+    .catch(err => {
+      // Azure not configured or unreachable - the deterministic,
+      // answer-driven report rendered above already stands on its own.
+      console.warn('AI text enhancement unavailable, using answer-driven report as-is:', err.message);
+    });
+  }
+
+
+  function buildLeaderboard() {
+    const sorted  = Object.entries(usecaseData).sort((a,b)=>b[1].votes-a[1].votes);
+    const total   = sorted.reduce((s,[,d])=>s+d.votes,0);
+    const maxV    = sorted[0][1].votes;
+    const rowCls  = ['top1','top2','top3'];
+    const catOrder= ['AI Priority','Budget Visibility','S151 Risk','Team Capacity','ERP Resilience','LGR Readiness'];
+    const catEmoji= {'AI Priority':'🤖','Budget Visibility':'📊','S151 Risk':'🛡','Team Capacity':'⏱','ERP Resilience':'📈','LGR Readiness':'🏛'};
+    let html = '';
+    catOrder.forEach(cat => {
+      const items = sorted.filter(([,d])=>d.cat===cat);
+      if (!items.length) return;
+      html += `<div class="lb-section-head">${catEmoji[cat]} ${cat}</div>`;
+      items.forEach(([id,d]) => {
+        const rank  = sorted.findIndex(([i])=>i===id);
+        const pct   = Math.round(d.votes/total*100);
+        const barW  = Math.round(d.votes/maxV*100);
+        const isMe  = Object.values(answers).includes(id);
+        const medal = rank===0?'🥇':rank===1?'🥈':rank===2?'🥉':(rank+1);
+        html += `<div class="lb-row ${rowCls[rank]||''} ${isMe?'highlight':''}">
+          <div class="lb-rank">${medal}</div>
+          <div class="lb-info">
+            <div class="lb-usecase">${d.name}${isMe?' <span style="font-size:10px;color:var(--teal);font-weight:700;">← you</span>':''}</div>
+            <div class="lb-cat ${d.catCls}">${d.cat}</div>
+          </div>
+          <div class="lb-bar-wrap"><div class="lb-bar-bg"><div class="lb-bar-fill ${d.fill}" style="width:${barW}%"></div></div></div>
+          <div class="lb-count">${d.votes}</div>
+          <div class="lb-pct">${pct}%</div>
+        </div>`;
+      });
+    });
+    document.getElementById('lb-list').innerHTML = html;
+    const catVotes = {};
+    sorted.forEach(([,d])=>{ catVotes[d.cat]=(catVotes[d.cat]||0)+d.votes; });
+    const topCat = Object.entries(catVotes).sort((a,b)=>b[1]-a[1])[0];
+    const el = document.getElementById('lb-top-cat');
+    if (el && topCat) el.textContent = topCat[0];
+    const te = document.getElementById('lb-total');
+    if (te) te.textContent = total + ' votes';
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (id==='screen-leaderboard') buildLeaderboard();
+    window.scrollTo(0,0);
+  }
+
+  buildLeaderboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mastek · Public Finance Live 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        font-family: 'Mulish', sans-serif;
+        position: relative;
+        background: #08325a; /* matches the wallpaper's tone - fills any letterbox gap */
+      }
+
+      #bg-image {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* always shows the FULL wallpaper (both logos), never crops it */
+        object-position: center;
+        z-index: 0;
+      }
+
+      #content {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      #video-container {
+        width: 90%;
+        max-width: 600px;
+        height: 600px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #000000, #1a1a1a);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 40px;
+        position: relative;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+      }
+
+      #idle-video,
+      #talk-video,
+      #end-video {
+        width: 600px;
+        height: 602px;
+        object-fit: cover;
+        object-position: center center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transition: opacity 0.4s ease;
+      }
+
+      #talk-video,
+      #end-video {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #talk-video.active,
+      #end-video.active {
+        opacity: 1;
+      }
+
+      #idle-video.hidden {
+        opacity: 0;
+      }
+
+      #tap-hint {
+        display: none;
+        margin-top: 24px;
+        color: #fff;
+        font-weight: 600;
+        font-size: 15px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        opacity: 0.85;
+        animation: pulse-hint 1.8s ease-in-out infinite;
+      }
+
+      #tap-hint.active {
+        display: block;
+      }
+
+      @keyframes pulse-hint {
+        0%, 100% { opacity: 0.5; transform: translateY(0); }
+        50% { opacity: 1; transform: translateY(-3px); }
+      }
+
+      #cta-row {
+        display: none;
+        gap: 16px;
+        margin-top: 24px;
+      }
+
+      #cta-row.active {
+        display: flex;
+      }
+
+      .cta-btn {
+        padding: 16px 32px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        transition: all 0.25s ease;
+      }
+
+      .cta-yes {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: #fff;
+        box-shadow: 0 8px 24px rgba(0, 123, 255, 0.4);
+      }
+
+      .cta-yes:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(0, 123, 255, 0.6);
+      }
+
+      .cta-no {
+        background: #ffffff;
+        color: #063568;
+        border: 2px solid #063568;
+      }
+
+      .cta-no:hover {
+        background: #063568;
+        color: #fff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <img id="bg-image" src="display.png" alt="" />
+    <div id="content">
+      <div id="video-container">
+        <video id="idle-video" autoplay loop muted playsinline src="mia_idle.mp4"></video>
+        <!-- Pre-rendered once via D-ID Studio - static files, not live
+             API calls, so playing them costs zero D-ID credits no matter
+             how many visitors click through. -->
+        <video id="talk-video" playsinline preload="auto" src="Mia_Start.mp4"></video>
+        <video id="end-video" playsinline preload="auto" src="mia_end.mp4"></video>
+      </div>
+
+      <div id="tap-hint">Tap anywhere to begin</div>
+
+      <div id="cta-row">
+        <button id="cta-yes" class="cta-btn cta-yes">Take the Assessment</button>
+        <button id="cta-no" class="cta-btn cta-no">Maybe Later</button>
+      </div>
+    </div>
+
+    <script>
+      // ============================================
+      // STATIC-VIDEO AVATAR - no D-ID API calls at all.
+      // The greeting is a fixed script, so it was rendered ONCE via
+      // D-ID Studio into alex_v1_greeting.mp4. We just swap between
+      // the idle loop and that pre-rendered clip like any other
+      // <video> element - zero credits spent per visitor, and nothing
+      // that can 403 on-site.
+      // ============================================
+      const idleVideo = document.getElementById('idle-video');
+      const talkVideo = document.getElementById('talk-video');
+      const endVideo = document.getElementById('end-video');
+      const tapHint = document.getElementById('tap-hint');
+      const ctaRow = document.getElementById('cta-row');
+
+      function playClip(clipVideo, onComplete) {
+        idleVideo.classList.add('hidden');
+        clipVideo.classList.add('active');
+        clipVideo.currentTime = 0;
+        const playPromise = clipVideo.play();
+
+        clipVideo.onended = () => {
+          clipVideo.classList.remove('active');
+          idleVideo.classList.remove('hidden');
+          onComplete();
+        };
+
+        return playPromise;
+      }
+
+      function revertClipVisual(clipVideo) {
+        clipVideo.classList.remove('active');
+        idleVideo.classList.remove('hidden');
+      }
+
+      // Try to play the greeting the instant the page loads - no click
+      // needed. Browsers only block this if they haven't seen the visitor
+      // interact with the page/site yet; on a dedicated kiosk browser
+      // (launched with --autoplay-policy=no-user-gesture-required) this
+      // always succeeds. If a browser does block it, fall back to a
+      // single tap/click/key press anywhere on the page.
+      function startGreeting() {
+        const playPromise = playClip(talkVideo, () => {
+          ctaRow.classList.add('active');
+        });
+
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch((err) => {
+            console.warn('Autoplay with sound was blocked, waiting for a tap:', err);
+            revertClipVisual(talkVideo);
+            tapHint.classList.add('active');
+            const onFirstInteraction = () => {
+              tapHint.classList.remove('active');
+              playClip(talkVideo, () => {
+                ctaRow.classList.add('active');
+              });
+            };
+            document.addEventListener('click', onFirstInteraction, { once: true });
+            document.addEventListener('touchstart', onFirstInteraction, { once: true });
+            document.addEventListener('keydown', onFirstInteraction, { once: true });
+          });
+        }
+      }
+
+      window.addEventListener('load', () => {
+        // Small delay so the page doesn't feel like it's talking before
+        // it's finished settling in.
+        setTimeout(startGreeting, 1000);
+      });
+
+      document.getElementById('cta-yes').addEventListener('click', () => {
+        window.location.href = '/assessment.html';
+      });
+
+      document.getElementById('cta-no').addEventListener('click', () => {
+        ctaRow.classList.remove('active');
+        playClip(endVideo, () => {
+          // Loop back into the attract cycle for the next visitor.
+          setTimeout(startGreeting, 4000);
+        });
+      });
+    </script>
+  </body>
+</html>

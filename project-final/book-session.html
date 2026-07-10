@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Book a Session · Mastek</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:#0b1f3a; --gold:#C9A84C; --gold-light:#E8CC7A;
+    --teal:#00B4B4; --teal-light:#4DDBDB; --white:#ffffff;
+    --off-white:rgba(255,255,255,0.85); --grey:rgba(255,255,255,0.5);
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; font-family:'Inter',sans-serif; background:var(--navy); color:var(--white);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px 20px;
+    background-image: radial-gradient(ellipse at 50% 0%, rgba(0,180,180,0.08) 0%, transparent 55%),
+                       radial-gradient(ellipse at 50% 100%, rgba(201,168,76,0.06) 0%, transparent 55%);
+  }
+  .card {
+    width:100%; max-width:480px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09);
+    border-radius:18px; padding:40px 36px;
+  }
+  .logo-row { display:flex; align-items:center; gap:10px; margin-bottom:24px; }
+  .logo-dot { width:32px;height:32px;border-radius:8px; background:linear-gradient(135deg,var(--gold),var(--teal)); display:flex;align-items:center;justify-content:center; font-weight:900;font-size:13px;color:var(--navy); }
+  .logo-text { font-weight:800; font-size:14px; letter-spacing:0.02em; }
+  h1 { font-size:24px; font-weight:800; margin:0 0 8px; }
+  .sub { font-size:14px; color:var(--grey); line-height:1.6; margin:0 0 28px; }
+  .form-field {
+    background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.11); border-radius:12px;
+    padding:14px 16px; width:100%; font-family:'Inter',sans-serif; font-size:14px; color:var(--white);
+    margin-bottom:12px; outline:none; transition:border-color 0.2s;
+  }
+  .form-field:focus { border-color:var(--teal); }
+  .form-field::placeholder { color:var(--grey); }
+  textarea.form-field { resize:vertical; min-height:80px; font-family:'Inter',sans-serif; }
+  .form-row { display:flex; gap:10px; }
+  .form-row .form-field { flex:1; }
+  .btn-primary {
+    background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--navy); font-size:15px;
+    font-weight:800; padding:15px; border-radius:50px; border:none; cursor:pointer; width:100%;
+    transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 8px 30px rgba(201,168,76,0.28);
+  }
+  .btn-primary:hover { transform:translateY(-1px); }
+  .error-msg { color:#ff8a80; font-size:12.5px; margin:-2px 0 12px; text-align:center; display:none; }
+  .privacy { font-size:11.5px; color:var(--grey); text-align:center; margin-top:14px; line-height:1.5; }
+  #thankyou { display:none; text-align:center; }
+  #thankyou .icon { font-size:44px; margin-bottom:16px; }
+  #thankyou h1 { margin-bottom:12px; }
+  #thankyou .sub { margin-bottom:0; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div id="form-view">
+      <div class="logo-row"><div class="logo-dot">AI</div><div class="logo-text">Mastek</div></div>
+      <h1>Book a Session</h1>
+      <p class="sub">Leave your details and a member of our team will reach out to arrange a time.</p>
+
+      <div class="error-msg" id="booking-error"></div>
+
+      <div class="form-row">
+        <input class="form-field" type="text" placeholder="First name *" id="b-fname">
+        <input class="form-field" type="text" placeholder="Last name *" id="b-lname">
+      </div>
+      <input class="form-field" type="email" placeholder="Work email address *" id="b-email">
+      <input class="form-field" type="text" placeholder="Phone number (optional)" id="b-phone">
+      <input class="form-field" type="text" placeholder="Council / Organisation *" id="b-org">
+      <textarea class="form-field" placeholder="Anything specific you'd like to discuss? (optional)" id="b-message"></textarea>
+
+      <button class="btn-primary" id="b-submit" onclick="submitBooking()">Request a Session</button>
+      <p class="privacy">Your data is held securely and not shared with third parties.</p>
+    </div>
+
+    <div id="thankyou">
+      <div class="icon">✅</div>
+      <h1>Thanks, that's booked in</h1>
+      <p class="sub">Our team will reach out to you shortly to arrange a time that works. You can close this tab now.</p>
+    </div>
+  </div>
+
+<script>
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  // Generic/free email providers are not accepted - we want a company/work email.
+  const BLOCKED_EMAIL_DOMAINS = [
+    'gmail.com', 'googlemail.com', 'yahoo.com', 'yahoo.co.uk', 'ymail.com',
+    'outlook.com', 'hotmail.com', 'hotmail.co.uk', 'live.com', 'msn.com',
+    'icloud.com', 'me.com', 'mac.com', 'aol.com', 'aim.com',
+    'protonmail.com', 'proton.me', 'gmx.com', 'gmx.co.uk', 'mail.com',
+    'zoho.com', 'yandex.com', 'inbox.com', 'fastmail.com',
+  ];
+
+  function isCompanyEmail(email) {
+    const domain = email.split('@')[1]?.toLowerCase().trim();
+    return !!domain && !BLOCKED_EMAIL_DOMAINS.includes(domain);
+  }
+
+  function showError(msg) {
+    const err = document.getElementById('booking-error');
+    err.textContent = msg;
+    err.style.display = 'block';
+  }
+
+  function clearFieldStyles() {
+    ['b-fname', 'b-lname', 'b-email', 'b-org'].forEach(id => {
+      document.getElementById(id).style.borderColor = '';
+    });
+    document.getElementById('booking-error').style.display = 'none';
+  }
+
+  function submitBooking() {
+    clearFieldStyles();
+
+    const fname   = document.getElementById('b-fname').value.trim();
+    const lname   = document.getElementById('b-lname').value.trim();
+    const email   = document.getElementById('b-email').value.trim();
+    const phone   = document.getElementById('b-phone').value.trim();
+    const org     = document.getElementById('b-org').value.trim();
+    const message = document.getElementById('b-message').value.trim();
+
+    let firstBad = null;
+    let emailErrorMsg = '';
+    if (!fname) { document.getElementById('b-fname').style.borderColor = '#ff8a80'; firstBad = firstBad || 'b-fname'; }
+    if (!lname) { document.getElementById('b-lname').style.borderColor = '#ff8a80'; firstBad = firstBad || 'b-lname'; }
+    if (!email || !isValidEmail(email)) {
+      document.getElementById('b-email').style.borderColor = '#ff8a80';
+      firstBad = firstBad || 'b-email';
+      emailErrorMsg = 'Please enter a valid work email address.';
+    } else if (!isCompanyEmail(email)) {
+      document.getElementById('b-email').style.borderColor = '#ff8a80';
+      firstBad = firstBad || 'b-email';
+      emailErrorMsg = 'Please use your company/work email address, not a personal one (e.g. Gmail, Yahoo, Outlook).';
+    }
+    if (!org) { document.getElementById('b-org').style.borderColor = '#ff8a80'; firstBad = firstBad || 'b-org'; }
+
+    if (firstBad) {
+      showError(emailErrorMsg || 'Please fill in all required fields.');
+      document.getElementById(firstBad).focus();
+      return;
+    }
+
+    const btn = document.getElementById('b-submit');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    fetch('/api/save-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstName: fname, lastName: lname, email, phone, organisation: org, message }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) {
+          showError(data.error);
+          btn.disabled = false;
+          btn.textContent = 'Request a Session';
+          return;
+        }
+        document.getElementById('form-view').style.display = 'none';
+        document.getElementById('thankyou').style.display = 'block';
+      })
+      .catch(err => {
+        console.error('Booking save failed:', err);
+        showError('Something went wrong - please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Request a Session';
+      });
+  }
+</script>
+</body>
+</html>
