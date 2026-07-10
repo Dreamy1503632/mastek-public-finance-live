@@ -9,6 +9,14 @@ const { put, head } = require('@vercel/blob');
 
 const app = express();
 
+// Vercel (and most serverless hosts) sit the app behind a proxy, so
+// X-Forwarded-For is how the real visitor IP arrives. Without this,
+// express-rate-limit throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR instead of
+// working. `1` = trust exactly one hop (Vercel's own edge), which is
+// correct here and avoids the security risk of trusting an arbitrary
+// number of proxies.
+app.set('trust proxy', 1);
+
 var limiter = RateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
