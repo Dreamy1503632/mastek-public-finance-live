@@ -1090,7 +1090,17 @@
         organisation: council,
         answers: [1,2,3,4,5,6].map(q => answers[q] && usecaseData[answers[q]] ? usecaseData[answers[q]].name : ''),
       }),
-    }).catch(err => console.error('Lead save failed:', err));
+    })
+    .then(r => r.json().then(data => ({ ok: r.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok || data.error) {
+        // fetch() does NOT reject on 4xx/5xx - without this check, a
+        // rejected/failed save (bad validation, Blob error, etc.) fails
+        // completely silently with no console output at all.
+        console.error('Lead save rejected by server:', data.error || 'unknown error');
+      }
+    })
+    .catch(err => console.error('Lead save request failed (network/connection issue):', err));
 
     submitAndShow();
   }
@@ -1417,8 +1427,14 @@
         messages: [{ role: 'user', content: prompt }]
       })
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.json().then(data => ({ ok: r.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok || data.error) {
+        // Surface the REAL reason instead of letting it fall through to a
+        // generic JSON.parse failure below - check the browser console
+        // for this line to see exactly what Azure/the backend rejected.
+        throw new Error(`Backend error: ${data.error || 'unknown'}${data.detail ? ' | detail: ' + data.detail : ''}`);
+      }
       let raw = (data.content||[]).map(b=>b.text||'').join('');
       raw = raw.replace(/```json|```/g,'').trim();
       const r = JSON.parse(raw);
@@ -1433,9 +1449,11 @@
       renderLcrKeyFindings(r.executiveSummary);
     })
     .catch(err => {
-      // Azure not configured or unreachable - the deterministic,
-      // answer-driven report rendered above already stands on its own.
-      console.warn('AI text enhancement unavailable, using answer-driven report as-is:', err.message);
+      // Azure not configured, unreachable, or returned something we
+      // couldn't parse - the deterministic, answer-driven report rendered
+      // above already stands on its own, but log the real reason loudly
+      // so it's easy to diagnose during testing.
+      console.error('AI text enhancement failed, using answer-driven report as fallback. Reason:', err.message);
     });
   }
 
