@@ -1519,10 +1519,12 @@
   function restartAssessment() {
     // A kiosk needs a genuinely clean slate for the next visitor - rather
     // than manually resetting every piece of state (selected answers,
-    // rendered charts, capture form fields, computed report), a full
-    // reload is the reliable way to guarantee nothing carries over.
+    // rendered charts, capture form fields, computed report), sending
+    // them all the way back to the avatar greeting (rather than straight
+    // into a fresh assessment) restarts the full kiosk loop the same way
+    // it starts for every new visitor.
     if (confirm('Start a new assessment for the next visitor? This will clear the current report.')) {
-      window.location.href = '/assessment.html';
+      window.location.href = '/avatar.html';
     }
   }
 
