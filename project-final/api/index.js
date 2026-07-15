@@ -5,7 +5,7 @@ const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...ar
 const path = require('path');
 const XLSX = require('xlsx');
 const nodemailer = require('nodemailer');
-const { put, head } = require('@vercel/blob');
+const { put, head, list } = require('@vercel/blob');
 
 const app = express();
 
@@ -143,77 +143,83 @@ function escapeHtml(str) {
 }
 
 // ============================================
-// LEAD / BOOKING STORAGE (Vercel Blob, JSONL format)
-// One JSON object per line, appended on every submission - cheap, safe
-// for near-simultaneous writes, and trivially small at ~100 entries.
+// LEAD / BOOKING STORAGE (Vercel Blob, one object per record)
+// Each lead/booking gets its own blob key (leads/<id>.json,
+// bookings/<id>.json) instead of all sharing one growing file. This
+// avoids a real bug the shared-file version had: two requests hitting
+// the SAME file close together (e.g. save-lead, then mark-email-requested
+// a few seconds later) could each read-modify-write the whole file, and
+// whichever finished last would silently overwrite the other's change,
+// losing data. With one file per record, there's nothing to race over.
 // Convert to .xlsx on demand via /api/export-leads and
 // /api/export-bookings whenever you actually want the spreadsheet.
 // ============================================
-async function readJsonlBlob(filename) {
+const crypto = require('crypto');
+
+function newRecordId() {
+  return typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+async function saveRecord(prefix, id, data) {
+  const filename = `${prefix}/${id}.json`;
+  await put(filename, JSON.stringify(data), {
+    access: 'public',
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: 'application/json',
+  });
+}
+
+async function readRecord(prefix, id) {
   try {
+    const filename = `${prefix}/${id}.json`;
     const meta = await head(filename).catch(() => null);
-    if (!meta) return [];
-    const res = await fetch(meta.url);
-    if (!res.ok) return [];
-    const text = await res.text();
-    return text
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
+    if (!meta) return null;
+    const res = await fetch(meta.url, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (error) {
+    console.error(`Failed to read ${prefix}/${id}:`, error);
+    return null;
+  }
+}
+
+// Finds the most recently created record matching matchFn - used as a
+// fallback when the caller doesn't have the record's id (older clients,
+// or if the id somehow didn't reach the browser).
+async function findLatestRecord(prefix, matchFn) {
+  const records = await listRecords(prefix);
+  records.sort((a, b) => new Date(b.Timestamp || 0) - new Date(a.Timestamp || 0));
+  return records.find(matchFn) || null;
+}
+
+async function listRecords(prefix) {
+  try {
+    const { blobs } = await list({ prefix: `${prefix}/` });
+    const results = await Promise.all(
+      blobs.map(async (b) => {
         try {
-          return JSON.parse(line);
+          const res = await fetch(b.url, { cache: 'no-store' });
+          if (!res.ok) return null;
+          const data = await res.json();
+          data.__blobPathname = b.pathname; // internal use only, stripped before export
+          return data;
         } catch {
           return null;
         }
       })
-      .filter(Boolean);
+    );
+    return results.filter(Boolean);
   } catch (error) {
-    console.error(`Failed to read ${filename} from Blob:`, error);
+    console.error(`Failed to list ${prefix}:`, error);
     return [];
   }
 }
 
-async function appendJsonlBlob(filename, entry) {
-  const existingRows = await readJsonlBlob(filename);
-  existingRows.push(entry);
-  const body = existingRows.map((row) => JSON.stringify(row)).join('\n') + '\n';
-
-  await put(filename, body, {
-    access: 'public',
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: 'application/x-ndjson',
-  });
-
-  return existingRows;
-}
-
-// Updates the MOST RECENT row matching matchFn (searches from the end -
-// if the same email submitted the form more than once, e.g. during
-// testing, this flags their latest/current submission rather than an
-// older one). Rewrites the whole file, same cost as appendJsonlBlob at
-// this volume (~100 rows).
-async function updateLatestMatchingRow(filename, matchFn, updateFn) {
-  const rows = await readJsonlBlob(filename);
-  for (let i = rows.length - 1; i >= 0; i--) {
-    if (matchFn(rows[i])) {
-      updateFn(rows[i]);
-      const body = rows.map((row) => JSON.stringify(row)).join('\n') + '\n';
-      await put(filename, body, {
-        access: 'public',
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: 'application/x-ndjson',
-      });
-      return true;
-    }
-  }
-  return false;
-}
-
-const LEADS_FILE = 'leads.jsonl';
-const BOOKINGS_FILE = 'bookings.jsonl';
+const LEADS_PREFIX = 'leads';
+const BOOKINGS_PREFIX = 'bookings';
 
 app.post('/api/save-lead', async (req, res) => {
   const { firstName, lastName, email, organisation, answers } = req.body || {};
@@ -228,6 +234,7 @@ app.post('/api/save-lead', async (req, res) => {
     return res.status(400).json({ error: 'Please use your company/work email address, not a personal one (e.g. Gmail, Yahoo, Outlook).' });
   }
 
+  const id = newRecordId();
   const lead = {
     Timestamp: new Date().toISOString(),
     'First Name': firstName.trim(),
@@ -244,37 +251,50 @@ app.post('/api/save-lead', async (req, res) => {
   };
 
   try {
-    await appendJsonlBlob(LEADS_FILE, lead);
-    res.json({ message: 'Lead saved.' });
+    await saveRecord(LEADS_PREFIX, id, lead);
+    res.json({ message: 'Lead saved.', id });
   } catch (error) {
     console.error('Failed to save lead:', error);
     res.status(500).json({ error: 'Failed to save lead.' });
   }
 });
 
-// Flags the visitor's already-saved lead row as having requested the
-// emailed report - fired whenever they click the button, independent of
-// whether the actual email send succeeds (that's tracked separately in
-// server logs; this column just captures intent for follow-up purposes).
+// Flags the visitor's already-saved lead as having requested the emailed
+// report - fired whenever they click the button, independent of whether
+// the actual email send succeeds (that's tracked separately in server
+// logs; this column just captures intent for follow-up purposes).
+// Prefers matching by id (exact, no ambiguity); falls back to matching
+// by email + most recent timestamp if no id was provided.
 app.post('/api/mark-email-requested', async (req, res) => {
-  const { email } = req.body || {};
+  const { id, email } = req.body || {};
 
-  if (!isValidEmail(email)) {
-    return res.status(400).json({ error: 'A valid email address is required.' });
+  if (!id && !isValidEmail(email)) {
+    return res.status(400).json({ error: 'A lead id or valid email address is required.' });
   }
 
   try {
-    const updated = await updateLatestMatchingRow(
-      LEADS_FILE,
-      (row) => row.Email && row.Email.trim().toLowerCase() === email.trim().toLowerCase(),
-      (row) => { row['Requested Email Report'] = 'Yes'; }
-    );
+    let record = null;
+    let recordId = id;
 
-    if (!updated) {
-      // Lead row wasn't found (e.g. save-lead failed earlier) - not
-      // fatal, just nothing to flag.
-      console.warn('mark-email-requested: no matching lead found for', email);
+    if (id) {
+      record = await readRecord(LEADS_PREFIX, id);
     }
+    if (!record && email) {
+      record = await findLatestRecord(
+        LEADS_PREFIX,
+        (r) => r.Email && r.Email.trim().toLowerCase() === email.trim().toLowerCase()
+      );
+      if (record) recordId = record.__blobPathname.split('/')[1].replace(/\.json$/, '');
+    }
+
+    if (!record) {
+      console.warn('mark-email-requested: no matching lead found for', { id, email });
+      return res.json({ message: 'No matching lead found, nothing to flag.' });
+    }
+
+    delete record.__blobPathname;
+    record['Requested Email Report'] = 'Yes';
+    await saveRecord(LEADS_PREFIX, recordId, record);
 
     res.json({ message: 'Flagged.' });
   } catch (error) {
@@ -299,6 +319,7 @@ app.post('/api/save-booking', async (req, res) => {
     return res.status(400).json({ error: 'Organisation is required.' });
   }
 
+  const id = newRecordId();
   const booking = {
     Timestamp: new Date().toISOString(),
     'First Name': firstName.trim(),
@@ -310,8 +331,8 @@ app.post('/api/save-booking', async (req, res) => {
   };
 
   try {
-    await appendJsonlBlob(BOOKINGS_FILE, booking);
-    res.json({ message: 'Booking saved.' });
+    await saveRecord(BOOKINGS_PREFIX, id, booking);
+    res.json({ message: 'Booking saved.', id });
   } catch (error) {
     console.error('Failed to save booking:', error);
     res.status(500).json({ error: 'Failed to save booking.' });
@@ -319,13 +340,17 @@ app.post('/api/save-booking', async (req, res) => {
 });
 
 // ============================================
-// EXCEL EXPORT (on demand, built fresh from the JSONL data)
+// EXCEL EXPORT (on demand, built fresh from the stored records)
 // Visit /api/export-leads or /api/export-bookings any time - e.g. right
 // after the event - to download the familiar .xlsx file.
 // ============================================
 function rowsToXlsxResponse(res, rows, sheetName, downloadName) {
+  const cleanRows = rows.map((r) => {
+    const { __blobPathname, ...rest } = r;
+    return rest;
+  });
   const workbook = XLSX.utils.book_new();
-  const sheet = XLSX.utils.json_to_sheet(rows);
+  const sheet = XLSX.utils.json_to_sheet(cleanRows);
   XLSX.utils.book_append_sheet(workbook, sheet, sheetName);
   const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
@@ -336,7 +361,8 @@ function rowsToXlsxResponse(res, rows, sheetName, downloadName) {
 
 app.get('/api/export-leads', async (req, res) => {
   try {
-    const rows = await readJsonlBlob(LEADS_FILE);
+    const rows = await listRecords(LEADS_PREFIX);
+    rows.sort((a, b) => new Date(a.Timestamp || 0) - new Date(b.Timestamp || 0));
     rowsToXlsxResponse(res, rows, 'Leads', 'leads.xlsx');
   } catch (error) {
     console.error('Failed to export leads:', error);
@@ -346,7 +372,8 @@ app.get('/api/export-leads', async (req, res) => {
 
 app.get('/api/export-bookings', async (req, res) => {
   try {
-    const rows = await readJsonlBlob(BOOKINGS_FILE);
+    const rows = await listRecords(BOOKINGS_PREFIX);
+    rows.sort((a, b) => new Date(a.Timestamp || 0) - new Date(b.Timestamp || 0));
     rowsToXlsxResponse(res, rows, 'Bookings', 'bookings.xlsx');
   } catch (error) {
     console.error('Failed to export bookings:', error);
