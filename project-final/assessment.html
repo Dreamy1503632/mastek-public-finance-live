@@ -501,8 +501,8 @@
     .lcr-score-section, .lcr-opp-card, .lcr-quickwin-box, .lcr-profile-grid, .lcr-theme-card, .lcr-heat-wrap, .lcr-roadmap-col, .lcr-reco-card, .lcr-benefit-list, .lcr-gap-card { background:#F7F9FC !important; border-color:#E8EDF4 !important; }
     .lcr-table th { color:#555 !important; border-color:#ddd !important; }
     .lcr-table td { color:#0B1F3A !important; border-color:#eee !important; }
-    .lcr-next-step { background:#0B1F3A !important; }
-    .lcr-next-step, .lcr-next-step * { color:#fff !important; }
+    .lcr-next-step { display:none !important; }
+    .lcr-next-step-title { display:none !important; }
     .lcr-btn-report { display:none !important; }
     .lcr-page { padding:20px 10px !important; }
     .lcr-theme-grid, .lcr-roadmap, .lcr-profile-grid { grid-template-columns:1fr 1fr !important; }
@@ -898,8 +898,8 @@
         </div>
       </div>
 
-      <!-- Section 4: Next Step -->
-      <div class="lcr-section-title">Next Step</div>
+      <!-- Section 4: Next Step - hidden entirely in the PDF/print output (see @media print rules above), kept for the on-screen version -->
+      <div class="lcr-section-title lcr-next-step-title">Next Step</div>
       <div class="lcr-next-step">
         <button class="lcr-btn-report" onclick="emailMyReport()">Email my customised AI Assessment Report →</button>
       </div>
@@ -918,7 +918,7 @@
   <div class="lcr-modal-card">
     <div class="lcr-modal-icon">✅</div>
     <div class="lcr-modal-title">Thank you</div>
-    <div class="lcr-modal-desc">We have received your request and will share your customised AI Assessment Report shortly. </div>
+    <div class="lcr-modal-desc">We have received your request and will share your customised AI Assessment Report shortly. One of our experts will also be in touch to discuss how AI can help address your organisation&#x2019;s priorities.</div>
     <button class="lcr-modal-close" onclick="closeLcrModal()">Close</button>
   </div>
 </div>
