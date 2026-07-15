@@ -1213,6 +1213,15 @@
     // console (visible to us during testing/ops) rather than shown to
     // the visitor, since a flaky mailbox shouldn't block or worry them
     // at a live event.
+    // Flag this lead as having requested the emailed report - fired
+    // regardless of whether the actual send below succeeds, since we
+    // want to capture intent for follow-up either way.
+    fetch('/api/mark-email-requested', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: capturedLead.email }),
+    }).catch(err => console.error('Failed to flag email request (non-blocking):', err));
+
     fetch('/api/email-report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
