@@ -917,7 +917,7 @@
   <div class="lcr-modal-card">
     <div class="lcr-modal-icon">✅</div>
     <div class="lcr-modal-title">Thank you</div>
-    <div class="lcr-modal-desc">Your personalised AI Assessment Report has been emailed to <strong id="lcr-modal-email">your inbox</strong>. Please check your inbox (and spam folder) shortly. One of our experts will also be in touch to discuss how AI can help address your organisation&#x2019;s priorities.</div>
+    <div class="lcr-modal-desc">We have received your request and will share your customised AI Assessment Report shortly. One of our experts will also be in touch to discuss how AI can help address your organisation&#x2019;s priorities.</div>
     <button class="lcr-modal-close" onclick="closeLcrModal()">Close</button>
   </div>
 </div>
@@ -1206,6 +1206,13 @@
     btn.disabled = true;
     btn.textContent = 'Sending…';
 
+    // The visitor always sees a "request received" confirmation - their
+    // lead is already safely stored via /api/save-lead regardless of
+    // whether the email itself goes out. The actual send is still
+    // attempted here in the background; failures are logged to the
+    // console (visible to us during testing/ops) rather than shown to
+    // the visitor, since a flaky mailbox shouldn't block or worry them
+    // at a live event.
     fetch('/api/email-report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1217,18 +1224,19 @@
         report: currentReport,
       }),
     })
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) throw new Error(data.error);
+      .then(r => r.json().then(data => ({ ok: r.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok || data.error) {
+          console.error('Email send failed (visitor was not shown this):', data.error || 'unknown error');
+        }
+      })
+      .catch(err => {
+        console.error('Email send request failed (visitor was not shown this):', err);
+      })
+      .finally(() => {
         const emailEl = document.getElementById('lcr-modal-email');
         if (emailEl) emailEl.textContent = capturedLead.email;
         document.getElementById('lcr-modal-overlay').classList.add('active');
-      })
-      .catch(err => {
-        console.error('Emailing report failed:', err);
-        alert("We couldn't send your report right now - please try again in a moment.");
-      })
-      .finally(() => {
         btn.disabled = false;
         btn.textContent = originalLabel;
       });
