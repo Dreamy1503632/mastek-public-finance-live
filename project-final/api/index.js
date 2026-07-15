@@ -189,6 +189,29 @@ async function appendJsonlBlob(filename, entry) {
   return existingRows;
 }
 
+// Updates the MOST RECENT row matching matchFn (searches from the end -
+// if the same email submitted the form more than once, e.g. during
+// testing, this flags their latest/current submission rather than an
+// older one). Rewrites the whole file, same cost as appendJsonlBlob at
+// this volume (~100 rows).
+async function updateLatestMatchingRow(filename, matchFn, updateFn) {
+  const rows = await readJsonlBlob(filename);
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (matchFn(rows[i])) {
+      updateFn(rows[i]);
+      const body = rows.map((row) => JSON.stringify(row)).join('\n') + '\n';
+      await put(filename, body, {
+        access: 'public',
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: 'application/x-ndjson',
+      });
+      return true;
+    }
+  }
+  return false;
+}
+
 const LEADS_FILE = 'leads.jsonl';
 const BOOKINGS_FILE = 'bookings.jsonl';
 
@@ -217,6 +240,7 @@ app.post('/api/save-lead', async (req, res) => {
     'Q4 - Team Capacity': answers?.[3] || '',
     'Q5 - ERP Resilience': answers?.[4] || '',
     'Q6 - LGR Readiness': answers?.[5] || '',
+    'Requested Email Report': 'No',
   };
 
   try {
@@ -225,6 +249,37 @@ app.post('/api/save-lead', async (req, res) => {
   } catch (error) {
     console.error('Failed to save lead:', error);
     res.status(500).json({ error: 'Failed to save lead.' });
+  }
+});
+
+// Flags the visitor's already-saved lead row as having requested the
+// emailed report - fired whenever they click the button, independent of
+// whether the actual email send succeeds (that's tracked separately in
+// server logs; this column just captures intent for follow-up purposes).
+app.post('/api/mark-email-requested', async (req, res) => {
+  const { email } = req.body || {};
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: 'A valid email address is required.' });
+  }
+
+  try {
+    const updated = await updateLatestMatchingRow(
+      LEADS_FILE,
+      (row) => row.Email && row.Email.trim().toLowerCase() === email.trim().toLowerCase(),
+      (row) => { row['Requested Email Report'] = 'Yes'; }
+    );
+
+    if (!updated) {
+      // Lead row wasn't found (e.g. save-lead failed earlier) - not
+      // fatal, just nothing to flag.
+      console.warn('mark-email-requested: no matching lead found for', email);
+    }
+
+    res.json({ message: 'Flagged.' });
+  } catch (error) {
+    console.error('Failed to flag email request:', error);
+    res.status(500).json({ error: 'Failed to flag email request.' });
   }
 });
 
