@@ -834,6 +834,7 @@
         <div class="rp-badge"><div class="rhb-dot"></div>AI-generated · Personalised</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-leaderboard" style="padding:7px 16px;font-size:12px;" onclick="restartAssessment()">↺ New Assessment</button>
         <button class="btn-leaderboard" style="padding:7px 16px;font-size:12px;" onclick="showScreen('screen-leaderboard')">Leaderboard →</button>
         <button class="btn-leaderboard" style="padding:7px 16px;font-size:12px;" onclick="downloadReportPdf()">⬇ Download PDF</button>
         <button class="btn-primary" style="padding:7px 18px;font-size:12px;" onclick="openBooking()">Book a Session</button>
@@ -1513,6 +1514,16 @@
     if (el && topCat) el.textContent = topCat[0];
     const te = document.getElementById('lb-total');
     if (te) te.textContent = total + ' votes';
+  }
+
+  function restartAssessment() {
+    // A kiosk needs a genuinely clean slate for the next visitor - rather
+    // than manually resetting every piece of state (selected answers,
+    // rendered charts, capture form fields, computed report), a full
+    // reload is the reliable way to guarantee nothing carries over.
+    if (confirm('Start a new assessment for the next visitor? This will clear the current report.')) {
+      window.location.href = '/assessment.html';
+    }
   }
 
   function showScreen(id) {
