@@ -1099,6 +1099,8 @@
         // rejected/failed save (bad validation, Blob error, etc.) fails
         // completely silently with no console output at all.
         console.error('Lead save rejected by server:', data.error || 'unknown error');
+      } else if (data.id && capturedLead) {
+        capturedLead.id = data.id;
       }
     })
     .catch(err => console.error('Lead save request failed (network/connection issue):', err));
@@ -1220,7 +1222,7 @@
     fetch('/api/mark-email-requested', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: capturedLead.email }),
+      body: JSON.stringify({ id: capturedLead.id, email: capturedLead.email }),
     }).catch(err => console.error('Failed to flag email request (non-blocking):', err));
 
     fetch('/api/email-report', {
